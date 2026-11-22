@@ -1,7 +1,7 @@
 # FieldTrack — build notes
 
-**Build checked:** 2026-11-18  
-**Current artifact:** `FieldTrack_Interactive_Prototype_v6.html`
+**Build checked:** 2026-11-22  
+**Current artifact:** `index.html` / `FieldTrack_Interactive_Prototype_v10.html`
 
 ## Scope kept
 
@@ -33,13 +33,13 @@ These are local/static and mocked-browser checks. They do **not** prove live GPS
 
 - This is still a single-file web prototype, not an App Store / Google Play application.
 - The GPS breadcrumb records the current device only. Real-time sharing of multiple hunters requires HTTPS hosting, accounts/permissions, and a real-time backend; none is connected in the current workspace.
-- The current persistent workspace is the ChatGPT file library. There is no connected Git repository, deployment project, backend project, or production credentials available here.
+- A private GitHub repository has since been created by the user, but this workspace has no authenticated GitHub connection or configured remote. The project has not been pushed or deployed; no hosting or production backend is connected.
 - Nova Scotia parcel/ownership data is not a free default layer: GeoNOVA lists the property-parcel vector file as fee-based/restricted, and Property Online requires a subscription. The app must not present user-drawn lines as legal boundaries or infer private/Crown ownership.
 - Map and weather providers need a production cost/terms review. OpenStreetMap's public tile server is best-effort and restricts bulk/offline tile downloads. Open-Meteo's free API is for non-commercial use with request limits and attribution. The exact satellite imagery endpoint also needs production terms/cost confirmation.
 
 ## Next implementation gate
 
-To move from a local prototype to a shared, installable first version, the project needs a Git repository plus an HTTPS hosting destination and a backend with authentication and real-time location storage. Until those are connected, the safest useful work is to keep improving and testing this self-contained prototype without claiming live multi-hunter tracking or deployment.
+The GitHub repository now exists, but the current project package still needs to be uploaded and verified there. An installable HTTPS test build then needs a hosting destination. Live multi-hunter location sharing additionally needs authentication, explicit consent, and a real-time backend. Until those are connected, this remains a self-contained browser prototype.
 
 ## v3 update — 2026-11-16
 
@@ -79,9 +79,9 @@ To move from a local prototype to a shared, installable first version, the proje
 - `node /mnt/data/fieldtrack/test_gps_v6.cjs` — passed: unique HTML IDs; single pagehide owner; current weak-accuracy display; accurate/weak/stale/jump handling; active-session persistence; idempotent pagehide/beforeunload suspension; watch cleanup; interrupted reload recovery; route segmentation; distance excluding route gaps; manual stop/restart; background/foreground handling; unclean-process-exit recovery; and actual segmented GeoJSON serialization.
 - These are mocked-browser tests. They do not establish real iPhone GPS performance, background recording, browser process-kill behavior, or deployed HTTPS operation.
 
-## Current delivery blocker
+## Historical delivery note — v6 (2026-11-18)
 
-The persistent project folder is available and contains v2–v6 plus test scripts, but it is not a Git repository and no hosting/backend project or credentials are connected. The smallest next step toward an installable HTTPS test build is to create/connect a GitHub repository and provide its repository URL or authorize the GitHub connection. Real multi-hunter location sharing remains blocked until a hosted authentication and real-time backend are configured and tested.
+At the v6 checkpoint, no GitHub repository had yet been created. The user has since created the private `hunter2026CA/FieldTrack` repository, but the current workspace still has no authenticated connection or remote configured. Hosting and backend setup remain separate later steps.
 
 
 ## v7 update — 2026-11-19
@@ -102,6 +102,67 @@ The persistent project folder is available and contains v2–v6 plus test script
 - Re-ran the v5 and v6 GPS regression suites; both passed.
 - All GPS tests use a mocked browser, storage, map and Geolocation API. They do not prove real iPhone location accuracy, lock-screen/background tracking, or process-kill behavior. The v7 prototype remains a single-file browser app; it has not been deployed over HTTPS or tested on a physical phone.
 
-## Current delivery blocker (unchanged)
+## v8 update — 2026-11-20
 
-The persistent working folder contains v2–v7 and their test scripts, but it is not connected to GitHub, an HTTPS hosting project, or a production backend. The smallest user action to enable version-controlled handoff is to create a GitHub account/repository and provide its repository URL or authorize the GitHub connection. Actual multi-hunter tracking additionally requires a configured authentication and real-time backend. No group chat or shared trail-camera upload feature is included.
+- Improved property-boundary drawing with a visible first-point marker, an undo-last-point action, and a cancel-drawing action.
+- The Finish button stays disabled until at least three points exist. Undoing below three points disables Finish again.
+- Cancelling or switching to pin/measure mode discards only the unfinished outline and leaves the previously saved boundary untouched. Clearing a saved boundary remains a separate, confirmed action.
+- Added `test_boundary_controls.cjs` to verify unique HTML IDs, full inline JavaScript syntax, control wiring, the three-point threshold, preview updates, undo behavior, cancel behavior, and preservation of an existing saved boundary.
+- Updated the README and transfer instructions to identify v8 as the current entry point and to distinguish the historical v6/v7 GPS tests from the current v8 boundary test.
+
+### v8 verification details
+
+- `node test_boundary_controls.cjs` — passed.
+- `node test_gps_v7.cjs` — passed against the archived v7 snapshot.
+- `node test_gps_v6.cjs` — passed against the archived v6 snapshot.
+- `node --check test_boundary_controls.cjs` — passed.
+- These checks use mocked browser/map behavior and static JavaScript compilation. They do not establish live iPhone GPS, background tracking, map-provider uptime, or deployed HTTPS behavior.
+
+## Current delivery blocker
+
+The user reports that the private GitHub repository `hunter2026CA/FieldTrack` has been created. The current project workspace still has no authenticated GitHub connection or configured remote, so this run did not upload or deploy anything and cannot verify the private repository contents. The smallest next action is to finish uploading the project files through GitHub's web interface (or connect an authorized GitHub integration). HTTPS hosting and a production backend are still not configured. Real multi-hunter location sharing remains blocked until authentication, consent controls, and a real-time backend are implemented and tested. No group chat or shared trail-camera upload feature is included.
+
+## v9 update — 2026-11-21
+
+- Added a **Zoom to saved boundary** map control so a hunter can bring the complete drawn property outline into view after panning elsewhere or reopening the app.
+- The control is disabled until a valid saved boundary exists. Boundary coordinates are checked for array shape, finite values, and latitude/longitude ranges before the app enables the action or draws the saved polygon.
+- The fit uses Leaflet bounds with 36-pixel padding and a maximum zoom of 17, keeping the full outline visible rather than zooming excessively into a small property.
+- Added `test_gps_v9.cjs`, which runs the GPS recovery/quality regression harness against the archived v9 snapshot. This closes a verification gap in the previous package.
+- Preserved v8 as a historical HTML snapshot and saved the current app as `FieldTrack_Interactive_Prototype_v9.html`.
+
+### v9 verification details
+
+- `node --check test_boundary_controls.cjs` — passed.
+- `node --check test_gps_v9.cjs` — passed.
+- `node test_boundary_controls.cjs` — passed: unique IDs, full inline JavaScript syntax, three-point completion rule, preview, undo/cancel, preservation of the previous saved outline, coordinate validation, fit-control enable/disable, and fit-bounds arguments.
+- `node test_gps_v9.cjs` — passed against current `index.html`: GPS quality, weak-fix display, separate last-fix persistence, non-live restored marker, route recording/recovery/segmentation, stale/jump filtering, permission status, lifecycle suspension, and segmented GeoJSON.
+- `node test_gps_v7.cjs` and `node test_gps_v6.cjs` — passed as historical regression checks.
+- These are automated tests with mocked browser/map/GPS APIs. A physical iPhone test over HTTPS is still required for real GPS, map interaction, and background behavior.
+
+## Current delivery blocker after v9
+
+The private GitHub repository is user-created, but this workspace still has no authenticated GitHub connection or configured remote. The v9 package is prepared locally; it has not been uploaded, pushed, or deployed. The smallest unblock is to upload the extracted v9 package contents to the existing private repository, or authorize a GitHub integration. Hosting, backend services, production map/weather terms, and ongoing costs remain unvalidated. No group chat or shared trail-camera photo uploads are in scope.
+
+
+## v10 update — 2026-11-22
+
+- Added an optional **Location name** field when dropping a saved pin, so hunters can name specific stands and waypoints (for example, “North ridge stand”) instead of relying only on generic categories.
+- Saved-location cards and map popups now show the custom name and its type. Search matches names as well as types, notes, and coordinates.
+- Added an **Edit details** action to update a saved location's name and field note. Cancelling either prompt leaves the saved record unchanged.
+- Added a shared pin normalizer for saved and imported points. It rejects coordinates outside latitude/longitude ranges and bounds names to 48 characters and notes to 280 characters. Existing saved pins without names remain compatible and display their type as the title.
+- GeoJSON export/import now preserves custom location names. The map remains the first panel in the narrow-screen/mobile layout.
+- Added `test_saved_locations.cjs` for name normalization, coordinate rejection, name search, type filtering, HTML escaping, edit/cancel behavior, export/import wiring, unique IDs, inline JavaScript syntax, and mobile map-first layout.
+
+### v10 verification details
+
+- `node --check test_boundary_controls.cjs`, `node --check test_gps_v9.cjs`, `node --check test_gps_v10.cjs`, and `node --check test_saved_locations.cjs` — passed.
+- `node test_saved_locations.cjs` — passed.
+- `node test_boundary_controls.cjs` — passed.
+- `node test_gps_v10.cjs` — passed against the current `index.html`.
+- `node test_gps_v9.cjs` — passed against the archived v9 snapshot.
+- `node test_gps_v7.cjs` and `node test_gps_v6.cjs` — passed against historical snapshots.
+- All browser, map, and GPS tests remain simulated/mocked; no live iPhone or deployed HTTPS test was possible in this workspace.
+
+## Current delivery blocker after v10
+
+The v10 code and tests are prepared in this workspace, but no authenticated GitHub connector or configured Git remote is available here. The private repository has not been updated by this run and no deployment exists. The next smallest action remains uploading the contents of the v10 package to the user's existing private repository. After that, a hosted HTTPS test is required before real-device GPS validation. Map/weather provider terms and operating costs, plus a backend for live multi-hunter location sharing, remain unvalidated. Group chat and shared trail-camera photo uploads remain excluded.
