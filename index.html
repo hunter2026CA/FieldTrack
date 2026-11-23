@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>FieldTrack — Hunting Land & Wind</title>
+<title>FieldTrack — Map-first Hunting Navigator</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
+html,body{height:100%;overflow:hidden} body{display:flex;flex-direction:column} header{flex:0 0 auto} main{position:relative;display:block;flex:1;min-height:0;height:auto;padding-bottom:66px} aside{display:none} #map{position:absolute;inset:0;width:100%;height:100%;min-height:0;z-index:1} .mobile-panel{display:none!important} .ft-nav{position:fixed;z-index:1200;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(6px + env(safe-area-inset-bottom));background:#142017;border-top:1px solid #50624f;box-shadow:0 -5px 18px #0008} .ft-nav button{margin:0;border:0;border-radius:9px;background:transparent;color:#c8d3c4;padding:7px 2px;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px} .ft-nav button span{font-size:19px;line-height:1.1} .ft-nav button.active{background:#2a3c2c;color:#b8e47b;outline:1px solid #a7d36b} .ft-panel{position:fixed;z-index:1100;left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));max-height:min(62dvh,560px);overflow:auto;background:#19251cf2;border:1px solid #50624f;border-radius:14px;padding:12px;box-shadow:0 8px 30px #0009;backdrop-filter:blur(8px)} .ft-panel .card{margin-bottom:8px} .ft-panel-close{position:sticky;top:0;float:right;width:auto;background:#314333;padding:6px 10px} .ft-map-tools{position:fixed;z-index:900;top:76px;right:10px;display:flex;flex-direction:column;gap:6px} .ft-map-tools button{width:auto;background:#19251ceF;padding:8px 10px;box-shadow:0 2px 8px #0007} header .badge{font-size:10px} @media(min-width:761px){.ft-nav{max-width:560px;left:50%;transform:translateX(-50%);border:1px solid #50624f;border-bottom:0;border-radius:14px 14px 0 0}.ft-panel{max-width:460px;left:auto;right:16px;bottom:82px}}
+
 :root{--bg:#101812;--panel:#19251c;--panel2:#223126;--text:#f2f5ee;--muted:#b8c4b5;--accent:#a7d36b;--line:#354638;--warn:#f3ca72}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
 header{padding:12px 14px;background:#172219;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -39,11 +41,11 @@ button{cursor:pointer;font-weight:650}button.primary{background:var(--accent);co
 .compass-readings .metric{font-size:16px}
 .leaflet-popup-content-wrapper{background:#18241a;color:#f2f5ee}.leaflet-popup-tip{background:#18241a}
 .saved-location{border-top:1px solid var(--line);padding:9px 0}.saved-location:first-child{border-top:0}.saved-location-title{font-weight:750;font-size:13px}.saved-location-meta{font-size:11px;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}.saved-location-actions{display:flex;gap:5px;margin-top:5px}.saved-location-actions button{padding:6px;font-size:11px;margin:0}.saved-location-actions button[data-action="delete"]{border-color:#81534b;color:#ffd1c9}
-@media(max-width:760px){main{display:flex;flex-direction:column;height:auto;min-height:calc(100dvh - 60px)}#map{order:0;height:48dvh;min-height:320px}aside{order:1;overflow:visible;border-right:0}.sub{display:none}}
+@media(max-width:760px){header .sub{display:none}}
 </style>
 </head>
 <body>
-<header><div><div class="brand">FIELD<span>TRACK</span></div><div class="sub">Interactive map • Wind • Pins • Boundaries • Distance</div></div><span class="badge">Interactive prototype v12</span></header>
+<header><div><div class="brand">FIELD<span>TRACK</span></div><div class="sub">Interactive map • Wind • Pins • Boundaries • Distance</div></div><span class="badge">Map-first prototype v13</span></header>
 <main>
 <aside>
  <div class="card"><h3>Map & terrain</h3>
@@ -95,25 +97,29 @@ button{cursor:pointer;font-weight:650}button.primary{background:var(--accent);co
   <p id="savedPinSummary" aria-live="polite">No saved locations yet.</p>
   <div id="savedPinList"><p>Saved locations will appear here.</p></div>
  </div>
- <div class="card"><h3>Shared hunting map</h3>
-  <p>Prepare a shareable map export for hunters you choose. This prototype can export the pins and notes, but live multi-user syncing and invite-based access need a hosted backend and account/sign-in system.</p>
-  <label class="sub" for="groupName">Hunting group name</label><input id="groupName" placeholder="e.g. Warwick Mountain crew">
-  <label class="sub" for="shareNote">Sharing note (optional)</label><input id="shareNote" placeholder="e.g. Fall 2026 — stand and bait locations">
-  <div class="row"><button class="primary" id="exportGroup">Export shared map</button><button id="importGroup">Import map file</button></div>
-  <input id="importFile" type="file" accept=".geojson,.json" hidden>
-  <p id="shareStatus">Share the exported file only with hunters you trust. Anyone who receives it may be able to view its coordinates.</p>
- </div>
- <div class="card"><h3>Land ownership overlay</h3>
-  <p><b>Important:</b> Crown/private boundaries are not universally available in a single free national dataset. This prototype does not guess ownership. Load an official GeoJSON/KML-converted GeoJSON file for the area to display its boundaries.</p>
-  <label class="sub" for="ownershipFile">Load land boundaries (.geojson / .json)</label><input id="ownershipFile" type="file" accept=".geojson,.json,application/geo+json">
-  <p id="ownershipStatus">No ownership boundary file loaded. Confirm access rights with the relevant provincial/municipal authority before entering land.</p>
+ <div class="card"><h3>Crown land & property boundaries</h3>
+  <p>Show the Government of Nova Scotia Crown Land map layer. The official dataset includes Crown lands under provincial administration; it is a reference layer, not a guarantee of public access or hunting permission.</p>
+  <button id="toggleCrown" class="primary" aria-pressed="false">Show Nova Scotia Crown land</button>
+  <label class="sub" for="ownershipFile">Optional: load another official boundary file (.geojson / .json)</label><input id="ownershipFile" type="file" accept=".geojson,.json,application/geo+json">
+  <p id="ownershipStatus" role="status" aria-live="polite">Crown land layer is off. Turn it on to view provincial Crown land boundaries.</p>
+  <p><a href="https://data.novascotia.ca/d/sqec-gjbw" target="_blank" rel="noopener">Official Nova Scotia Crown Land dataset</a></p>
  </div>
  <div class="card"><h3>Elevation inspection</h3><div id="elevation" class="metric">—</div><p id="coords">Tap a point on the map to view coordinates and estimated elevation.</p><p>Elevation uses a free public elevation endpoint where available. Topographic map layers can show contours, but accuracy varies.</p></div>
  <div class="card"><h3>Privacy & limits</h3><p>Pins are stored locally in this browser and can be exported as GeoJSON. Weather/elevation requests need an internet connection. Map tiles and public APIs have their own availability and usage limits. This prototype is not an official land-access or navigation authority.</p></div>
 </aside>
 <div id="map" aria-label="Interactive field map"></div>
 </main>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div class="ft-map-tools"><button id="quickLocate" title="Show my location">◎ My location</button><button id="quickCrown" title="Toggle Crown land layer">♧ Crown land</button></div>
+<nav class="ft-nav" aria-label="Main navigation">
+ <button class="active" data-tab="map" aria-current="page"><span>⌖</span>Map</button>
+ <button data-tab="stands"><span>⚑</span>Stands</button>
+ <button data-tab="tracking"><span>➤</span>Tracking</button>
+ <button data-tab="weather"><span>☼</span>Weather</button>
+ <button data-tab="land"><span>▧</span>Land</button>
+</nav>
+<section id="tabPanel" class="ft-panel" hidden aria-live="polite"></section>
+<script src=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
 <script>
 const map=L.map('map');
 // Restore the last map position locally so hunters reopen the same property area.
@@ -125,6 +131,13 @@ const topo=L.tileLayer('https://tile.openmaps.fr/opentopomap/{z}/{x}/{y}.png',{m
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'<a href="https://www.esri.com/" target="_blank" rel="noopener">Imagery © Esri</a>'});
 street.addTo(map);
 let pins=[], pinLayer=L.layerGroup().addTo(map), ownershipLayer=null, importedLayer=L.layerGroup().addTo(map), mode='pin', firstMeasure=null, measureLine=null, locationMarker=null, accuracyCircle=null, selected=null;
+// Official Nova Scotia Crown Land map service (Government of Nova Scotia).
+const crownLandLayer=(window.L&&L.esri)?L.esri.dynamicMapLayer({url:'https://nsgiwa.novascotia.ca/arcgis/rest/services/PLAN/PLANCrownLandsWM84V1/MapServer',opacity:0.48,transparent:true, f:'image'}):null;
+function toggleCrownLayer(){if(!crownLandLayer){$('ownershipStatus').textContent='Crown land service could not load. Check your connection and try again.';return false}if(map.hasLayer(crownLandLayer)){map.removeLayer(crownLandLayer);$('toggleCrown').textContent='Show Nova Scotia Crown land';$('toggleCrown').classList.add('primary');$('toggleCrown').setAttribute('aria-pressed','false');$('ownershipStatus').textContent='Crown land layer is off.'}else{crownLandLayer.addTo(map);$('toggleCrown').textContent='Hide Nova Scotia Crown land';$('toggleCrown').classList.remove('primary');$('toggleCrown').setAttribute('aria-pressed','true');$('ownershipStatus').textContent='Official Nova Scotia Crown Land map layer is on. Verify access and hunting rules before entering.'}return true}
+$('toggleCrown').addEventListener('click',toggleCrownLayer);$('quickCrown').addEventListener('click',toggleCrownLayer);
+function openTab(tab){const panel=$('tabPanel'),aside=document.querySelector('aside'),buttons=[...document.querySelectorAll('.ft-nav button')];buttons.forEach(b=>{const active=b.dataset.tab===tab;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});const returnCards=()=>{[...panel.querySelectorAll('.card')].forEach(c=>aside.appendChild(c));panel.hidden=true;panel.innerHTML=''};if(tab==='map'){returnCards();setTimeout(()=>map.invalidateSize(),80);return}returnCards();const cards={stands:['Animal tracking pins'],tracking:['Hunter GPS tracking'],weather:['Live weather & wind','North & wind compass'],land:['Map & terrain','Crown land & property boundaries','Elevation inspection']};const titles=cards[tab]||[];const selected=[...aside.querySelectorAll('.card')].filter(c=>titles.some(t=>c.querySelector('h3')?.textContent.trim()===t));const close=document.createElement('button');close.className='ft-panel-close';close.type='button';close.textContent='Close ✕';close.addEventListener('click',()=>openTab('map'));panel.appendChild(close);selected.forEach(c=>panel.appendChild(c));panel.hidden=false;setTimeout(()=>map.invalidateSize(),80)}
+document.querySelectorAll('.ft-nav button').forEach(b=>b.addEventListener('click',()=>openTab(b.dataset.tab)));$('quickLocate').addEventListener('click',()=>$('locate').click());
+
 let boundaryPoints=[], boundaryLayer=null, boundaryPreview=null, savedBoundary=null;
 let trackPoints=[], trackLines=[], trackWatchId=null;
 try{savedBoundary=JSON.parse(localStorage.getItem('fieldtrack-boundary')||'null')}catch(e){savedBoundary=null}
