@@ -166,3 +166,27 @@ The private GitHub repository is user-created, but this workspace still has no a
 ## Current delivery blocker after v10
 
 The v10 code and tests are prepared in this workspace, but no authenticated GitHub connector or configured Git remote is available here. The private repository has not been updated by this run and no deployment exists. The next smallest action remains uploading the contents of the v10 package to the user's existing private repository. After that, a hosted HTTPS test is required before real-device GPS validation. Map/weather provider terms and operating costs, plus a backend for live multi-hunter location sharing, remain unvalidated. Group chat and shared trail-camera photo uploads remain excluded.
+
+## v11 — weather/wind verification coverage (2026-11-22)
+
+- Added `test_weather_v11.cjs` to verify the current app exposes wind speed, direction, gusts, and manual refresh; requests Open-Meteo wind values in km/h; renders direction as a compass bearing; and explains that the bearing indicates the direction the wind comes FROM.
+- Added the weather test to the README's automated-check instructions.
+- This is test/documentation coverage, not a change to the live weather provider or a measurement-accuracy guarantee. Real-world weather freshness and local wind variation still require field validation.
+
+
+## v12 update — fixed north and wind-direction compass (2026-11-23)
+
+- Replaced the phone-heading compass display with a fixed north-up compass labelled N, E, S, and W. North is a stable reference at the top; the display does not rotate with the phone.
+- Added a green north arrow and a red wind arrow. The red arrow rotates to the meteorological wind bearing (the direction the wind comes FROM).
+- Added explicit wind FROM and wind TOWARD readouts. The TOWARD bearing is calculated by adding 180 degrees and normalizing to 0–359.
+- Added 16-point compass labels for the wind readouts so bearings such as 195° display as SSW and the opposite 015° as NNE. Existing eight-point labels used for yardage measurements are unchanged.
+- If weather cannot load or the direction is missing, the wind arrow is hidden and both direction readouts show Unavailable; the fixed north arrow remains visible.
+- Added `test_compass_wind_v12.cjs` for UI structure, unique IDs, helper math, arrow rotation, accessible labels, missing-data behavior, and inline JavaScript syntax.
+
+### v12 verification details
+
+- `node --check test_compass_wind_v12.cjs` — passed.
+- `node test_compass_wind_v12.cjs` — passed.
+- Full regression run passed: `test_saved_locations.cjs`, `test_weather_v11.cjs`, `test_compass_wind_v12.cjs`, `test_boundary_controls.cjs`, `test_gps_v10.cjs`, `test_gps_v9.cjs`, `test_gps_v7.cjs`, and `test_gps_v6.cjs`. All eight test scripts also passed `node --check`.
+- These are mocked/static checks, not a physical iPhone compass, GPS, or live weather validation.
+- No authenticated GitHub connection or configured remote is available in this workspace. The v12 package is prepared locally but has not been pushed or deployed. The user must upload the extracted package contents to the existing private repository and verify the hosted page before testing on iPhone.

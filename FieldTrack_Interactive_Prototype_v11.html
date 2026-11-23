@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>FieldTrack — Hunting Land & Wind</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#101812;--panel:#19251c;--panel2:#223126;--text:#f2f5ee;--muted:#b8c4b5;--accent:#a7d36b;--line:#354638;--warn:#f3ca72}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:12px 14px;background:#172219;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.brand{font-size:19px;font-weight:800;letter-spacing:.3px}.brand span{color:var(--accent)}.sub{font-size:11px;color:var(--muted)}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,340px);height:calc(100dvh - 60px);min-height:540px}
+aside{grid-column:2;grid-row:1;overflow:auto;padding:12px;background:var(--panel);border-left:1px solid var(--line)}
+#map{grid-column:1;grid-row:1;height:100%;min-height:500px;background:#d9e2d2}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+h3{margin:0 0 9px;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.6px}
+p{margin:6px 0;color:var(--muted);font-size:12px;line-height:1.45}
+button,select,input{font:inherit;border-radius:8px;border:1px solid #50624f;background:#111a13;color:var(--text);padding:9px;width:100%;margin:3px 0}
+button{cursor:pointer;font-weight:650}button.primary{background:var(--accent);color:#172014;border-color:var(--accent)}button.active{outline:2px solid var(--accent)}
+.row{display:flex;gap:7px}.row>*{flex:1;min-width:0}
+.metric{font-size:20px;font-weight:750}.metric.compact{font-size:15px}.metric small{font-size:11px;color:var(--muted);font-weight:500}
+.status{font-size:12px;color:var(--muted);white-space:pre-wrap}.badge{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:3px 7px;font-size:11px;color:var(--muted)}
+#compass{width:74px;height:74px;border:2px solid var(--accent);border-radius:50%;position:relative;margin:auto;background:#111a13}
+#needle{position:absolute;left:33px;top:9px;width:4px;height:27px;background:#e75e50;transform-origin:50% 28px;clip-path:polygon(50% 0,100% 100%,50% 78%,0 100%)}
+#compass:after{content:"N";position:absolute;top:3px;left:33px;font-size:10px;color:var(--accent)}
+.leaflet-popup-content-wrapper{background:#18241a;color:#f2f5ee}.leaflet-popup-tip{background:#18241a}
+.saved-location{border-top:1px solid var(--line);padding:9px 0}.saved-location:first-child{border-top:0}.saved-location-title{font-weight:750;font-size:13px}.saved-location-meta{font-size:11px;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}.saved-location-actions{display:flex;gap:5px;margin-top:5px}.saved-location-actions button{padding:6px;font-size:11px;margin:0}.saved-location-actions button[data-action="delete"]{border-color:#81534b;color:#ffd1c9}
+@media(max-width:760px){main{display:flex;flex-direction:column;height:auto;min-height:calc(100dvh - 60px)}#map{order:0;height:48dvh;min-height:320px}aside{order:1;overflow:visible;border-right:0}.sub{display:none}}
+</style>
+</head>
+<body>
+<header><div><div class="brand">FIELD<span>TRACK</span></div><div class="sub">Interactive map • Wind • Pins • Boundaries • Distance</div></div><span class="badge">Interactive prototype v10</span></header>
+<main>
+<aside>
+ <div class="card"><h3>Map & terrain</h3>
+  <label class="sub" for="maptype">Base map</label><select id="maptype"><option value="street">Road map</option><option value="topo">Topographic contours</option><option value="sat">Satellite imagery</option></select>
+  <div class="row"><button id="locate" class="primary">My location</button><button id="measure">Measure yardage</button></div>
+  <p>Tap the map to inspect elevation or add pins. Measure mode: tap two points. Your last map position and zoom are remembered on this device.</p>
+  <div class="row"><button id="startBoundary">Draw property boundary</button><button id="finishBoundary" disabled>Finish boundary (3+ points)</button></div>
+  <div class="row"><button id="undoBoundary" disabled>Undo last point</button><button id="cancelBoundary" disabled>Cancel drawing</button></div>
+  <div class="row"><button id="fitBoundary" disabled>Zoom to saved boundary</button><button id="clearBoundary">Clear saved boundary</button></div><p id="boundaryStatus" role="status" aria-live="polite">No property boundary drawn yet.</p>
+ </div>
+ <div class="card"><h3>Hunter GPS tracking</h3>
+  <p>Record this device's route while you hunt. The track is saved on this device only; live tracking other hunters requires a secure hosted service and their opt-in. Mobile browsers may pause GPS when you switch apps or lock the phone. FieldTrack checkpoints the route and asks you to resume; it does not draw a straight line across the gap.</p>
+  <div class="row"><button id="startTrack" class="primary">Start GPS track</button><button id="stopTrack" disabled>Stop</button></div>
+  <div class="row"><button id="exportTrack">Export map & track</button><button id="clearTrack">Clear track</button></div>
+  <p id="trackStatus" role="status" aria-live="polite">GPS tracking is off. Start tracking to record your route.</p>
+  <div class="row"><div><div id="gpsAccuracy" class="metric">—</div><small>GPS accuracy</small></div><div><div id="gpsDistance" class="metric">0 m</div><small>Recorded distance</small></div><div><div id="gpsPoints" class="metric">0</div><small>Track points</small></div></div>
+  <div class="row"><div><div id="gpsSignal" class="metric compact" aria-live="polite">No fix</div><small>Fix quality</small></div><div><div id="gpsLastFix" class="metric compact">—</div><small>Last GPS fix</small></div></div>
+  <p id="gpsRecovery" class="status"></p>
+ </div>
+ <div class="card"><h3>Live weather & wind</h3>
+  <div class="row"><div><div id="windSpeed" class="metric">—</div><small>Wind speed</small></div><div><div id="windDir" class="metric">—</div><small>Wind direction</small></div></div>
+  <p id="weatherText">Tap “My location” or the map to load local conditions.</p><button id="refreshWeather">Refresh weather</button>
+  <p>Wind is forecast/model data, not a guaranteed on-site measurement. Gusts and local terrain can differ. Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.</p>
+ </div>
+ <div class="card"><h3>Compass & range</h3>
+  <div class="row" style="align-items:center"><div id="compass"><div id="needle"></div></div><div style="flex:1"><div id="heading" class="metric">—°</div><small>Heading</small><p id="rangeText">No range measured yet.</p></div></div>
+  <button id="enableCompass">Enable phone compass</button>
+ </div>
+ <div class="card"><h3>Animal tracking pins</h3>
+  <select id="pinType"><option>Animal sighting</option><option>Blood trail</option><option>Last known location</option><option>Trail camera</option><option>Hunting stand</option><option>Ground blind</option><option>Bait pile</option><option>Track / sign</option><option>Parking / access</option><option>Other waypoint</option></select>
+  <label class="sub" for="pinName">Location name (optional)</label><input id="pinName" maxlength="48" placeholder="e.g. North ridge stand">
+  <label class="sub" for="pinNote">Field note (optional)</label><input id="pinNote" maxlength="280" placeholder="e.g. trail faces east; fresh tracks">
+  <button class="primary" id="addPin">Add pin at next map tap</button>
+  <div class="row"><button id="exportPins">Export pins</button><button id="clearPins">Clear pins</button></div>
+  <p id="pinCount">0 pins saved in this browser.</p>
+  <h3 style="margin-top:12px">Saved stands & waypoints</h3>
+  <input id="pinSearch" type="search" placeholder="Search saved locations" aria-label="Search saved locations">
+  <select id="pinFilter" aria-label="Filter saved locations"><option value="all">All location types</option><option>Hunting stand</option><option>Ground blind</option><option>Bait pile</option><option>Trail camera</option><option>Animal sighting</option><option>Blood trail</option><option>Last known location</option><option>Track / sign</option><option>Parking / access</option><option>Other waypoint</option></select>
+  <p id="savedPinSummary" aria-live="polite">No saved locations yet.</p>
+  <div id="savedPinList"><p>Saved locations will appear here.</p></div>
+ </div>
+ <div class="card"><h3>Shared hunting map</h3>
+  <p>Prepare a shareable map export for hunters you choose. This prototype can export the pins and notes, but live multi-user syncing and invite-based access need a hosted backend and account/sign-in system.</p>
+  <label class="sub" for="groupName">Hunting group name</label><input id="groupName" placeholder="e.g. Warwick Mountain crew">
+  <label class="sub" for="shareNote">Sharing note (optional)</label><input id="shareNote" placeholder="e.g. Fall 2026 — stand and bait locations">
+  <div class="row"><button class="primary" id="exportGroup">Export shared map</button><button id="importGroup">Import map file</button></div>
+  <input id="importFile" type="file" accept=".geojson,.json" hidden>
+  <p id="shareStatus">Share the exported file only with hunters you trust. Anyone who receives it may be able to view its coordinates.</p>
+ </div>
+ <div class="card"><h3>Land ownership overlay</h3>
+  <p><b>Important:</b> Crown/private boundaries are not universally available in a single free national dataset. This prototype does not guess ownership. Load an official GeoJSON/KML-converted GeoJSON file for the area to display its boundaries.</p>
+  <label class="sub" for="ownershipFile">Load land boundaries (.geojson / .json)</label><input id="ownershipFile" type="file" accept=".geojson,.json,application/geo+json">
+  <p id="ownershipStatus">No ownership boundary file loaded. Confirm access rights with the relevant provincial/municipal authority before entering land.</p>
+ </div>
+ <div class="card"><h3>Elevation inspection</h3><div id="elevation" class="metric">—</div><p id="coords">Tap a point on the map to view coordinates and estimated elevation.</p><p>Elevation uses a free public elevation endpoint where available. Topographic map layers can show contours, but accuracy varies.</p></div>
+ <div class="card"><h3>Privacy & limits</h3><p>Pins are stored locally in this browser and can be exported as GeoJSON. Weather/elevation requests need an internet connection. Map tiles and public APIs have their own availability and usage limits. This prototype is not an official land-access or navigation authority.</p></div>
+</aside>
+<div id="map" aria-label="Interactive field map"></div>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map=L.map('map');
+// Restore the last map position locally so hunters reopen the same property area.
+let initialView=null;try{initialView=JSON.parse(localStorage.getItem('fieldtrack-map-view')||'null')}catch(e){initialView=null}
+if(initialView&&Array.isArray(initialView.center)&&initialView.center.length===2&&Number.isFinite(initialView.zoom)){map.setView(initialView.center,Math.max(3,Math.min(19,initialView.zoom)))}else{map.setView([43.65,-65.53],10)} // Default view: Shelburne–Barrington area, Nova Scotia
+map.on('moveend',()=>{const c=map.getCenter();saveLocal('fieldtrack-map-view',{center:[c.lat,c.lng],zoom:map.getZoom(),savedAt:new Date().toISOString()})});
+const street=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>'});
+const topo=L.tileLayer('https://tile.openmaps.fr/opentopomap/{z}/{x}/{y}.png',{maxZoom:17,attribution:'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> | <a href="https://github.com/sletuffe/OpenTopoMap" target="_blank" rel="noopener">© OpenTopoMap-R</a> | <a href="https://openmaps.fr/donate" target="_blank" rel="noopener">Donation</a>'});
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'<a href="https://www.esri.com/" target="_blank" rel="noopener">Imagery © Esri</a>'});
+street.addTo(map);
+let pins=[], pinLayer=L.layerGroup().addTo(map), ownershipLayer=null, importedLayer=L.layerGroup().addTo(map), mode='pin', firstMeasure=null, measureLine=null, locationMarker=null, accuracyCircle=null, selected=null;
+let boundaryPoints=[], boundaryLayer=null, boundaryPreview=null, savedBoundary=null;
+let trackPoints=[], trackLines=[], trackWatchId=null;
+try{savedBoundary=JSON.parse(localStorage.getItem('fieldtrack-boundary')||'null')}catch(e){savedBoundary=null}
+const $=id=>document.getElementById(id);
+function metersToYards(m){return m*1.0936133}
+function bearing(a,b){const r=Math.PI/180,lat1=a.lat*r,lat2=b.lat*r,dLon=(b.lng-a.lng)*r,y=Math.sin(dLon)*Math.cos(lat2),x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);return (Math.atan2(y,x)/r+360)%360}
+function cardinal(d){return ['N','NE','E','SE','S','SW','W','NW'][Math.round(d/45)%8]}
+function distance(a,b){return map.distance(a,b)}
+function nice(n){return Number(n).toFixed(1)}
+function saveLocal(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){return false}}
+function makePinId(){return window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():`pin-${Date.now()}-${Math.random().toString(36).slice(2,8)}`}
+function normalizePin(p){
+ if(!p||!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lng)))return null;
+ const lat=Number(p.lat),lng=Number(p.lng);
+ if(Math.abs(lat)>90||Math.abs(lng)>180)return null;
+ return {id:typeof p.id==='string'&&p.id?p.id:makePinId(),lat,lng,name:String(p.name||'').trim().slice(0,48),type:String(p.type||'Other waypoint').slice(0,40),note:String(p.note||'').slice(0,280),time:typeof p.time==='string'?p.time:new Date().toISOString()};
+}
+function savePins(){if(!saveLocal('fieldtrack-pins',pins))$('pinCount').textContent='Storage is full; export your pins to keep a backup.';else $('pinCount').textContent=pins.length+' pins saved in this browser.'}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderPinList(){
+ const query=$('pinSearch').value.trim().toLowerCase(),filter=$('pinFilter').value;
+ const matches=pins.map((p,index)=>({p,index})).filter(({p})=>(filter==='all'||p.type===filter)&&(!query||`${p.name||''} ${p.type||''} ${p.note||''} ${p.lat} ${p.lng}`.toLowerCase().includes(query)));
+ $('savedPinSummary').textContent=`${matches.length} matching location${matches.length===1?'':'s'} • ${pins.length} saved total`;
+ $('savedPinList').innerHTML=matches.length?matches.slice(0,50).map(({p,index})=>{
+  const when=p.time&&Number.isFinite(Date.parse(p.time))?new Date(p.time).toLocaleString():'Date not recorded';
+  const title=esc(p.name||p.type||'Waypoint'),kind=esc(p.type||'Waypoint');
+  return `<div class="saved-location"><div class="saved-location-title">${title}</div>${p.name?`<div class="saved-location-meta">${kind}</div>`:''}<div class="saved-location-meta">${esc(p.note||'No note')}<br>${Number(p.lat).toFixed(5)}, ${Number(p.lng).toFixed(5)}<br>${esc(when)}</div><div class="saved-location-actions"><button data-action="show" data-index="${index}">Show</button><button data-action="edit" data-index="${index}">Edit details</button><button data-action="delete" data-index="${index}">Delete</button></div></div>`
+ }).join(''):'<p>No matching saved locations.</p>';
+ if(matches.length>50)$('savedPinSummary').textContent+=` • showing first 50`;
+}
+function drawPins(){pinLayer.clearLayers();pins.forEach((p,i)=>{const marker=L.marker([p.lat,p.lng]).addTo(pinLayer);marker.__fieldTrackPinId=p.id;marker.bindPopup(`<b>${esc(p.name||p.type||'Waypoint')}</b><br><small>${esc(p.type||'Waypoint')}</small><br>${esc(p.note||'No note')}<br><small>${esc(p.time||'Date not recorded')}</small><br><button onclick="deletePin(${i})">Delete pin</button>`)});savePins();renderPinList()}
+function editPinDetails(index){
+ if(!Number.isInteger(index)||index<0||index>=pins.length)return false;
+ const pin=pins[index],name=prompt('Location name (leave blank to use its type):',pin.name||'');if(name===null)return false;
+ const note=prompt('Field note:',pin.note||'');if(note===null)return false;
+ pin.name=String(name).trim().slice(0,48);pin.note=String(note).slice(0,280);drawPins();return true;
+}
+window.deletePin=i=>{if(Number.isInteger(i)&&i>=0&&i<pins.length){pins.splice(i,1);drawPins()}}
+try{pins=JSON.parse(localStorage.getItem('fieldtrack-pins')||'[]');if(!Array.isArray(pins))pins=[]}catch(e){pins=[]}pins=pins.map(normalizePin).filter(Boolean);drawPins();
+$('pinSearch').addEventListener('input',renderPinList);$('pinFilter').addEventListener('change',renderPinList);
+$('savedPinList').addEventListener('click',e=>{const button=e.target.closest('button[data-action]');if(!button)return;const index=Number(button.dataset.index),pin=pins[index];if(!pin)return;
+ if(button.dataset.action==='show'){map.setView([pin.lat,pin.lng],Math.max(map.getZoom(),16));pinLayer.eachLayer(layer=>{if(layer.__fieldTrackPinId===pin.id)layer.openPopup()})}
+ else if(button.dataset.action==='edit'){editPinDetails(index)}
+ else if(button.dataset.action==='delete'&&confirm(`Delete this ${pin.name||pin.type||'waypoint'}?`)){pins.splice(index,1);drawPins()}
+});
+function validBoundaryPoints(points){return Array.isArray(points)&&points.length>=3&&points.every(p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1]))&&Math.abs(Number(p[0]))<=90&&Math.abs(Number(p[1]))<=180)}
+function updateBoundaryFitControl(){$('fitBoundary').disabled=!validBoundaryPoints(savedBoundary)}
+function fitSavedBoundary(){if(!validBoundaryPoints(savedBoundary))return false;const bounds=L.latLngBounds(savedBoundary.map(([lat,lng])=>[Number(lat),Number(lng)]));if(!bounds.isValid())return false;map.fitBounds(bounds,{padding:[36,36],maxZoom:17});return true}
+function renderBoundary(){if(boundaryLayer)map.removeLayer(boundaryLayer);boundaryLayer=null;updateBoundaryFitControl();if(validBoundaryPoints(savedBoundary)){boundaryLayer=L.polygon(savedBoundary,{color:'#a7d36b',weight:3,fillOpacity:.12}).addTo(map);$('boundaryStatus').textContent='Property boundary saved on this device ('+savedBoundary.length+' points). Verify it against an authoritative survey or land record.';}}
+function boundaryCanFinish(points){return Array.isArray(points)&&points.length>=3}
+function refreshBoundaryPreview(){
+ if(boundaryPreview)map.removeLayer(boundaryPreview);
+ boundaryPreview=null;
+ if(boundaryPoints.length===1)boundaryPreview=L.circleMarker(boundaryPoints[0],{radius:5,color:'#a7d36b',fillOpacity:.9}).addTo(map);
+ else if(boundaryPoints.length>1)boundaryPreview=L.polyline(boundaryPoints,{color:'#a7d36b',weight:3,dashArray:'6 5'}).addTo(map);
+ $('undoBoundary').disabled=boundaryPoints.length===0;
+ $('cancelBoundary').disabled=mode!=='boundary';
+ $('finishBoundary').disabled=!boundaryCanFinish(boundaryPoints);
+}
+function undoBoundaryPoint(){
+ if(mode!=='boundary'||boundaryPoints.length===0)return false;
+ boundaryPoints.pop();refreshBoundaryPreview();
+ $('boundaryStatus').textContent=boundaryPoints.length?`${boundaryPoints.length} boundary points remain. Add at least 3 points, then finish.`:'Last point removed. Tap the map to add boundary points.';
+ return true;
+}
+function cancelBoundaryDrawing(){
+ if(mode!=='boundary')return false;
+ boundaryPoints=[];mode='pin';refreshBoundaryPreview();$('startBoundary').classList.remove('active');
+ $('boundaryStatus').textContent='Boundary drawing cancelled. Your previously saved boundary was left unchanged.';
+ return true;
+}
+renderBoundary();
+// GPS track state is checkpointed as one recoverable session. v6 keeps interrupted route gaps separate.
+let trackSession=null;
+try{
+ const raw=JSON.parse(localStorage.getItem('fieldtrack-track-session')||'null');
+ if(raw&&Array.isArray(raw.points))trackSession=raw;
+}catch(e){trackSession=null}
+try{trackPoints=trackSession?trackSession.points:JSON.parse(localStorage.getItem('fieldtrack-track')||'[]')}catch(e){trackPoints=[]}
+if(!Array.isArray(trackPoints))trackPoints=[];
+trackPoints=trackPoints.filter(p=>p&&Number.isFinite(+p.lat)&&Number.isFinite(+p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180).slice(-3000).map(p=>({...p,lat:+p.lat,lng:+p.lng}));
+let bestGpsAccuracy=trackPoints.reduce((best,p)=>Number.isFinite(+p.accuracy)?Math.min(best,+p.accuracy):best,Infinity);
+let lastGpsFix=null;try{const savedFix=JSON.parse(localStorage.getItem('fieldtrack-last-gps-fix')||'null');if(savedFix&&Number.isFinite(+savedFix.lat)&&Number.isFinite(+savedFix.lng)&&Math.abs(+savedFix.lat)<=90&&Math.abs(+savedFix.lng)<=180&&Number.isFinite(Date.parse(savedFix.time)))lastGpsFix={...savedFix,lat:+savedFix.lat,lng:+savedFix.lng,accuracy:Number.isFinite(+savedFix.accuracy)&&+savedFix.accuracy>0?+savedFix.accuracy:NaN}}catch(e){lastGpsFix=null}
+const lastTrackFix=trackPoints[trackPoints.length-1]||null;
+const savedFixTime=lastGpsFix?Date.parse(lastGpsFix.time):NaN,lastTrackFixTime=lastTrackFix?Date.parse(lastTrackFix.time):NaN;
+let latestGpsFixAt=Number.isFinite(savedFixTime)&&(!Number.isFinite(lastTrackFixTime)||savedFixTime>lastTrackFixTime)?savedFixTime:(Number.isFinite(lastTrackFixTime)?lastTrackFixTime:(Number.isFinite(Date.parse(trackSession?.lastFixAt||''))?Date.parse(trackSession.lastFixAt):null));
+let latestGpsAccuracy=Number.isFinite(savedFixTime)&&(!Number.isFinite(lastTrackFixTime)||savedFixTime>lastTrackFixTime)?lastGpsFix.accuracy:(lastTrackFix&&Number.isFinite(+lastTrackFix.accuracy)?+lastTrackFix.accuracy:Number(trackSession?.lastAccuracy));
+let trackDistanceMeters=0, resumeNeedsSegmentBreak=!!trackSession?.segmentBreakOnResume;
+function gpsDistanceMeters(a,b){const r=Math.PI/180,dLat=(b.lat-a.lat)*r,dLng=(b.lng-a.lng)*r,lat1=a.lat*r,lat2=b.lat*r;const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;const bounded=Math.max(0,Math.min(1,h));return 6371000*2*Math.atan2(Math.sqrt(bounded),Math.sqrt(1-bounded));}
+function splitTrackSegments(points=trackPoints){const segments=[];let current=[];points.forEach((point,index)=>{if(index>0&&point.breakBefore){if(current.length)segments.push(current);current=[]}current.push(point)});if(current.length)segments.push(current);return segments;}
+function recalculateTrackDistance(){trackDistanceMeters=0;splitTrackSegments().forEach(segment=>{for(let i=1;i<segment.length;i++)trackDistanceMeters+=gpsDistanceMeters(segment[i-1],segment[i])});}
+function gpsQuality(accuracy){if(!Number.isFinite(accuracy)||accuracy<=0)return 'Unknown';if(accuracy<=10)return 'Excellent';if(accuracy<=20)return 'Good';if(accuracy<=60)return 'Fair';return 'Poor'}
+function updateGpsSignal(accuracy,timestamp=latestGpsFixAt,state=null){
+ const quality=state||gpsQuality(accuracy);$('gpsSignal').textContent=quality;
+ if(!Number.isFinite(timestamp))$('gpsLastFix').textContent='—';
+ else {const fixDate=new Date(timestamp);$('gpsLastFix').textContent=Date.now()-timestamp>86400000?fixDate.toLocaleString():fixDate.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'})}
+}
+function updateGpsOverlay(lat,lng,accuracy,label='Your current location'){
+ const ll=[lat,lng];
+ if(locationMarker){locationMarker.setLatLng(ll);if(locationMarker.setPopupContent)locationMarker.setPopupContent(label)}else locationMarker=L.circleMarker(ll,{radius:8,color:'#a7d36b',fillOpacity:.9}).addTo(map).bindPopup(label);
+ if(Number.isFinite(accuracy)&&accuracy>0){if(accuracyCircle)accuracyCircle.setLatLng(ll).setRadius(Math.max(accuracy,5));else accuracyCircle=L.circle(ll,{radius:Math.max(accuracy,5),color:'#a7d36b',weight:1,fillOpacity:.06}).addTo(map)}
+}
+function updateGpsMetrics(accuracy){$('gpsAccuracy').textContent=Number.isFinite(accuracy)?`±${Math.round(accuracy)} m`:'—';$('gpsDistance').textContent=trackDistanceMeters>=1000?`${(trackDistanceMeters/1000).toFixed(2)} km`:`${Math.round(trackDistanceMeters)} m`;$('gpsPoints').textContent=String(trackPoints.length);}
+function persistTrack(interrupted){
+ const now=new Date().toISOString();
+ trackSession={version:2,points:trackPoints,startedAt:trackSession?.startedAt||trackPoints[0]?.time||now,updatedAt:now,active:!!(trackWatchId!==null)&&!interrupted,interrupted:!!interrupted,segmentBreakOnResume:!!resumeNeedsSegmentBreak,distanceMeters:Math.round(trackDistanceMeters),bestAccuracy:Number.isFinite(bestGpsAccuracy)?bestGpsAccuracy:null,lastFixAt:latestGpsFixAt?new Date(latestGpsFixAt).toISOString():null,lastAccuracy:Number.isFinite(latestGpsAccuracy)?latestGpsAccuracy:null};
+ const sessionSaved=saveLocal('fieldtrack-track-session',trackSession);
+ const legacySaved=saveLocal('fieldtrack-track',trackPoints);
+ return sessionSaved&&legacySaved;
+}
+function drawTrack(){trackLines.forEach(layer=>map.removeLayer(layer));trackLines=[];splitTrackSegments().filter(segment=>segment.length>1).forEach(segment=>{trackLines.push(L.polyline(segment.map(p=>[p.lat,p.lng]),{color:'#f3ca72',weight:4,opacity:.9}).addTo(map))});}
+function updateTrackStatus(message){$('trackStatus').textContent=message;}
+function stopGpsTrack(markInterrupted=false){
+ const hadWatch=trackWatchId!==null;
+ if(hadWatch){navigator.geolocation.clearWatch(trackWatchId);trackWatchId=null;}
+ if(trackPoints.length)resumeNeedsSegmentBreak=true;
+ $('startTrack').disabled=false;$('stopTrack').disabled=true;
+ if(trackSession){trackSession.active=false;trackSession.interrupted=!!markInterrupted;persistTrack(!!markInterrupted);}
+}
+function suspendGpsTrack(reason){
+ if(trackWatchId===null)return false;
+ try{navigator.geolocation.clearWatch(trackWatchId)}catch(e){}
+ trackWatchId=null;resumeNeedsSegmentBreak=trackPoints.length>0;
+ $('startTrack').disabled=false;$('stopTrack').disabled=true;
+ if(trackSession){trackSession.active=false;trackSession.interrupted=true;persistTrack(true)}
+ $('gpsRecovery').textContent=`Recording paused • ${trackPoints.length} saved points. Tap Start GPS track to resume; the next route segment will be kept separate across this gap.`;
+ updateTrackStatus(`${reason} Your route checkpoint is saved on this device. Tap Start GPS track when you return.`);
+ return true;
+}
+function addGpsPosition(pos){
+ const {latitude,longitude,accuracy}=pos.coords||{}, now=Date.now(), stamp=Number(pos.timestamp)||now;
+ $('gpsAccuracy').textContent=Number.isFinite(accuracy)&&accuracy>0?`±${Math.round(accuracy)} m`:'—';
+ if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180){updateTrackStatus('GPS returned invalid coordinates. Waiting for a valid fix.');return}
+ if(stamp>now+60000||now-stamp>120000){updateGpsSignal(accuracy,stamp,'Stale');updateTrackStatus('GPS fix is stale. Waiting for a fresh position.');return}
+ if(!Number.isFinite(accuracy)||accuracy<=0||accuracy>60){latestGpsFixAt=stamp;latestGpsAccuracy=Number.isFinite(accuracy)&&accuracy>0?Number(accuracy):NaN;lastGpsFix={lat:latitude,lng:longitude,accuracy:Number.isFinite(latestGpsAccuracy)?latestGpsAccuracy:null,time:new Date(stamp).toISOString()};saveLocal('fieldtrack-last-gps-fix',lastGpsFix);updateGpsSignal(accuracy,stamp);updateGpsOverlay(latitude,longitude,accuracy);updateTrackStatus(`GPS fix too weak to record (${Number.isFinite(accuracy)?'±'+Math.round(accuracy)+' m':'unknown accuracy'}). Your location and uncertainty circle are shown, but this fix is not added to the route. Waiting for accuracy of 60 m or better.`);return}
+ const ll=[latitude,longitude];
+ const point={lat:latitude,lng:longitude,time:new Date(stamp).toISOString(),accuracy:Number(accuracy)};
+ const previous=trackPoints[trackPoints.length-1];
+ const elapsed=previous?(stamp-new Date(previous.time).getTime())/1000:0;
+ if(previous&&elapsed<=0){updateTrackStatus('GPS timestamp did not advance; ignoring duplicate fix.');return}
+ const startsNewSegment=!!(previous&&(resumeNeedsSegmentBreak||elapsed>300));
+ if(previous&&!startsNewSegment){const gap=gpsDistanceMeters(previous,point);if(gap/elapsed>12){updateTrackStatus('GPS jump rejected as an implausible movement. Waiting for the next fix.');return}}
+ if(startsNewSegment)point.breakBefore=true;
+ latestGpsFixAt=stamp;latestGpsAccuracy=Number.isFinite(accuracy)&&accuracy>0?Number(accuracy):NaN;lastGpsFix={lat:latitude,lng:longitude,accuracy:Number.isFinite(latestGpsAccuracy)?latestGpsAccuracy:null,time:new Date(stamp).toISOString()};saveLocal('fieldtrack-last-gps-fix',lastGpsFix);updateGpsSignal(accuracy,stamp);updateGpsOverlay(latitude,longitude,accuracy);
+ const movedEnough=!previous||gpsDistanceMeters(previous,point)>=5, waitedEnough=!previous||stamp-new Date(previous.time).getTime()>=30000;
+ bestGpsAccuracy=Math.min(bestGpsAccuracy,accuracy);
+ let storageWarning=false;
+ if(startsNewSegment||movedEnough||waitedEnough){trackPoints.push(point);resumeNeedsSegmentBreak=false;if(trackPoints.length>3000)trackPoints=trackPoints.slice(-3000);recalculateTrackDistance();storageWarning=!persistTrack(false);drawTrack();}
+ updateGpsMetrics(accuracy);
+ if(trackPoints.length===1)map.setView(ll,16);
+ const segmentCount=splitTrackSegments().length;
+ updateTrackStatus(storageWarning?'Recording, but device storage is full. Export your map and track now to keep a backup.':`Recording this device • ${trackPoints.length} points • ${segmentCount} route segment${segmentCount===1?'':'s'} • current ±${Math.round(accuracy)} m • best ±${Math.round(bestGpsAccuracy)} m. Gaps are not drawn as straight lines.`);
+}
+function renderRecoveredTrack(){
+ if(trackSession&&trackSession.active){trackSession.active=false;trackSession.interrupted=true;trackSession.recoveredAfterUncleanExit=true;resumeNeedsSegmentBreak=trackPoints.length>0;}
+ if(trackPoints.length&&(!trackSession||!trackSession.active||trackSession.interrupted||trackSession.segmentBreakOnResume))resumeNeedsSegmentBreak=true;
+ recalculateTrackDistance();drawTrack();
+ const lastPoint=trackPoints[trackPoints.length-1],lastPointTime=lastPoint?Date.parse(lastPoint.time):NaN;
+ if(lastGpsFix&&(!Number.isFinite(lastPointTime)||Date.parse(lastGpsFix.time)>lastPointTime)){latestGpsFixAt=Date.parse(lastGpsFix.time);latestGpsAccuracy=lastGpsFix.accuracy;updateGpsOverlay(lastGpsFix.lat,lastGpsFix.lng,lastGpsFix.accuracy,'Last known GPS fix — not live');}
+ else if(lastPoint){latestGpsFixAt=lastPointTime;latestGpsAccuracy=Number(lastPoint.accuracy);}
+ const restoredLabel=lastGpsFix?'Last known':lastPoint?'Last saved':'No fix';
+ updateGpsMetrics(latestGpsAccuracy);updateGpsSignal(latestGpsAccuracy,latestGpsFixAt,restoredLabel==='No fix'?restoredLabel:restoredLabel+' · '+gpsQuality(latestGpsAccuracy));
+ if(trackSession&&trackSession.interrupted){persistTrack(true);$('gpsRecovery').textContent=`An interrupted track was recovered: ${trackPoints.length} saved points (${trackDistanceMeters>=1000?(trackDistanceMeters/1000).toFixed(2)+' km':Math.round(trackDistanceMeters)+' m'}) across ${splitTrackSegments().length} route segment(s). Press Start GPS track to continue without drawing a false line across the gap.`;updateTrackStatus('Previous GPS session recovered. Recording is stopped until you tap Start.');}
+ else if(trackPoints.length){$('gpsRecovery').textContent=`Previous route available on this device • ${trackPoints.length} saved points. Start tracking to continue it.`;updateTrackStatus('Saved route restored. GPS tracking is off.');}
+}
+renderRecoveredTrack();
+$('startTrack').onclick=()=>{
+ if(!navigator.geolocation){updateTrackStatus('This browser does not provide GPS location.');return}
+ if(!window.isSecureContext){updateTrackStatus('GPS needs a secure HTTPS page (or localhost). This saved-file preview may not allow GPS.');return}
+ if(trackWatchId!==null)return;
+ if(trackSession?.interrupted&&trackPoints.length)resumeNeedsSegmentBreak=true;
+ trackSession={...(trackSession||{}),version:2,points:trackPoints,startedAt:trackSession?.startedAt||new Date().toISOString(),active:true,interrupted:false};persistTrack(false);
+ $('startTrack').disabled=true;$('stopTrack').disabled=false;updateTrackStatus('Waiting for a fresh, accurate GPS fix…');
+ try{trackWatchId=navigator.geolocation.watchPosition(addGpsPosition,err=>{
+  const msg=err.code===1?'Location permission denied.':err.code===2?'GPS position temporarily unavailable.':'GPS timed out; still waiting for another fix.';
+  if(err.code===1){updateGpsSignal(NaN,latestGpsFixAt,'Permission denied');stopGpsTrack(false);updateTrackStatus(msg+' Allow location access in phone settings before restarting.');}
+  else {updateGpsSignal(NaN,latestGpsFixAt,err.code===2?'Signal unavailable':'Waiting for fix');updateTrackStatus(msg+' Your saved route is safe; the GPS watch remains active and will accept the next valid fix.');}
+ },{enableHighAccuracy:true,maximumAge:0,timeout:30000});persistTrack(false);
+ }catch(err){trackWatchId=null;stopGpsTrack(false);updateTrackStatus('Could not start GPS tracking: '+err.message)}
+};
+$('stopTrack').onclick=()=>{stopGpsTrack(false);updateTrackStatus(`Tracking stopped • ${trackPoints.length} points • route checkpoint saved on this device. Starting again creates a separate segment.`)};
+$('clearTrack').onclick=()=>{if(confirm('Delete the GPS track saved on this device?')){stopGpsTrack(false);trackPoints=[];trackSession=null;trackDistanceMeters=0;bestGpsAccuracy=Infinity;resumeNeedsSegmentBreak=false;localStorage.removeItem('fieldtrack-track-session');saveLocal('fieldtrack-track',trackPoints);drawTrack();updateGpsMetrics(NaN);latestGpsFixAt=null;updateGpsSignal(NaN,null,'No fix');$('gpsRecovery').textContent='';updateTrackStatus('GPS track cleared from this device.')}};
+// One lifecycle handler owns suspension. It is deliberately idempotent because pagehide and beforeunload can both fire.
+function handleTrackPageExit(){suspendGpsTrack('GPS recording paused because the page is closing.');}
+window.addEventListener('pagehide',handleTrackPageExit);
+window.addEventListener('beforeunload',handleTrackPageExit);
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='hidden')suspendGpsTrack('GPS recording paused because FieldTrack went into the background.');
+ else if(trackSession?.interrupted&&trackPoints.length){$('gpsRecovery').textContent=`Recording is paused • ${trackPoints.length} points recovered. Tap Start GPS track to resume on a separate route segment.`;updateTrackStatus('FieldTrack is visible again. GPS does not automatically restart; tap Start GPS track to continue.');}
+});
+$('startBoundary').onclick=()=>{mode='boundary';boundaryPoints=[];refreshBoundaryPreview();$('startBoundary').classList.add('active');$('addPin').classList.remove('active');$('measure').classList.remove('active');$('boundaryStatus').textContent='Tap around the property edge on the map. Add at least 3 points. You can undo the last point or cancel without changing the saved outline.'};
+$('undoBoundary').onclick=undoBoundaryPoint;
+$('cancelBoundary').onclick=cancelBoundaryDrawing;
+$('finishBoundary').onclick=()=>{if(mode!=='boundary'||!boundaryCanFinish(boundaryPoints)){$('boundaryStatus').textContent='Add at least 3 points before finishing.';return}savedBoundary=boundaryPoints.map(p=>[p.lat,p.lng]);localStorage.setItem('fieldtrack-boundary',JSON.stringify(savedBoundary));if(boundaryPreview)map.removeLayer(boundaryPreview);boundaryPreview=null;boundaryPoints=[];mode='pin';refreshBoundaryPreview();$('startBoundary').classList.remove('active');renderBoundary()};
+$('fitBoundary').onclick=()=>{if(!fitSavedBoundary())$('boundaryStatus').textContent='No valid saved boundary is available to zoom to.'};
+$('clearBoundary').onclick=()=>{if(confirm('Clear the saved property boundary from this device?')){savedBoundary=null;localStorage.removeItem('fieldtrack-boundary');if(boundaryLayer)map.removeLayer(boundaryLayer);boundaryLayer=null;updateBoundaryFitControl();boundaryPoints=[];mode='pin';refreshBoundaryPreview();$('boundaryStatus').textContent='No property boundary drawn yet.';$('startBoundary').classList.remove('active')}};
+$('maptype').addEventListener('change',e=>{[street,topo,sat].forEach(l=>map.removeLayer(l));({street,topo,sat}[e.target.value]).addTo(map)});
+$('addPin').onclick=()=>{cancelBoundaryDrawing();mode='pin';$('addPin').classList.add('active');$('measure').classList.remove('active');$('coords').textContent='Tap the map where you want to place the pin.'};
+$('measure').onclick=()=>{cancelBoundaryDrawing();mode='measure';firstMeasure=null;$('measure').classList.add('active');$('addPin').classList.remove('active');$('rangeText').textContent='Tap your start point, then end point.';if(measureLine){map.removeLayer(measureLine);measureLine=null}};
+$('locate').onclick=()=>{if(!navigator.geolocation){$('weatherText').textContent='Location is not supported by this browser.';return}navigator.geolocation.getCurrentPosition(pos=>{const ll=[pos.coords.latitude,pos.coords.longitude];map.setView(ll,16);if(locationMarker)map.removeLayer(locationMarker);locationMarker=L.circleMarker(ll,{radius:8,color:'#a7d36b',fillOpacity:.8}).addTo(map).bindPopup('Your current location');loadWeather(ll[0],ll[1]);inspectElevation(ll[0],ll[1]);},()=>{$('weatherText').textContent='Location permission denied or unavailable. Tap the map to choose a location.'},{enableHighAccuracy:true,timeout:12000})};
+map.on('click',e=>{const ll=e.latlng;if(mode==='boundary'){boundaryPoints.push(ll);refreshBoundaryPreview();$('boundaryStatus').textContent=boundaryPoints.length+' boundary points added. '+(boundaryCanFinish(boundaryPoints)?'You can finish the boundary now, or undo/cancel.':'Add at least '+(3-boundaryPoints.length)+' more point(s) to finish.')}else if(mode==='measure'){if(!firstMeasure){firstMeasure=ll;$('rangeText').textContent='Start point set. Tap the end point.';L.circleMarker(ll,{radius:5,color:'#f3ca72'}).addTo(map)}else{if(measureLine)map.removeLayer(measureLine);measureLine=L.polyline([firstMeasure,ll],{color:'#f3ca72',weight:4,dashArray:'7 6'}).addTo(map);const m=distance(firstMeasure,ll),b=bearing(firstMeasure,ll);$('rangeText').textContent=`${nice(metersToYards(m))} yd (${nice(m)} m) • bearing ${Math.round(b)}° ${cardinal(b)}`;firstMeasure=null;mode='pin';$('measure').classList.remove('active')}}else if($('addPin').classList.contains('active')){const pin=normalizePin({id:makePinId(),lat:ll.lat,lng:ll.lng,name:$('pinName').value,type:$('pinType').value,note:$('pinNote').value,time:new Date().toISOString()});if(pin)pins.push(pin);drawPins();$('pinName').value='';$('pinNote').value='';$('addPin').classList.remove('active');L.popup().setLatLng(ll).setContent('Pin saved.').openOn(map)}else{selected=ll;$('coords').textContent=`${ll.lat.toFixed(6)}, ${ll.lng.toFixed(6)} • loading elevation…`;loadWeather(ll.lat,ll.lng);inspectElevation(ll.lat,ll.lng)}});
+async function loadWeather(lat,lon){$('weatherText').textContent='Loading current modelled conditions…';try{const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kmh&timezone=auto`;const r=await fetch(u);if(!r.ok)throw Error('Weather unavailable');const d=await r.json(),c=d.current;$('windSpeed').textContent=nice(c.wind_speed_10m)+' km/h';$('windDir').textContent=Math.round(c.wind_direction_10m)+'° '+cardinal(c.wind_direction_10m);$('weatherText').textContent=`${nice(c.temperature_2m)}°C • gusts ${nice(c.wind_gusts_10m)} km/h • updated ${c.time||'now'}. Direction is where wind comes FROM.`}catch(e){$('weatherText').textContent='Could not load weather. Check connection and try again.'}}
+$('refreshWeather').onclick=()=>{const c=selected|| (locationMarker?locationMarker.getLatLng():map.getCenter());loadWeather(c.lat,c.lng)};
+async function inspectElevation(lat,lon){$('elevation').textContent='Loading…';try{const r=await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);if(!r.ok)throw Error();const d=await r.json();$('elevation').textContent=(d.elevation?.[0]!=null?Math.round(d.elevation[0])+' m':'Unavailable');$('coords').textContent=`${lat.toFixed(6)}, ${lon.toFixed(6)} • elevation estimate`}catch(e){$('elevation').textContent='Unavailable';$('coords').textContent=`${lat.toFixed(6)}, ${lon.toFixed(6)} • elevation lookup failed`}}
+function geojsonPayload(){return {type:'FeatureCollection',name:'FieldTrack',metadata:{group:$('groupName')?.value||'',shareNote:$('shareNote')?.value||'',exportedAt:new Date().toISOString()},features:[...pins.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{id:p.id,name:p.name||'',type:p.type,note:p.note,time:p.time}})),...(savedBoundary&&savedBoundary.length>=3?[{type:'Feature',geometry:{type:'Polygon',coordinates:[[...savedBoundary.map(p=>[p[1],p[0]]),[savedBoundary[0][1],savedBoundary[0][0]]]]},properties:{type:'User-drawn property boundary',warning:'User-drawn outline; not a legal survey'}}]:[]),...splitTrackSegments().filter(segment=>segment.length>1).map((segment,index)=>({type:'Feature',geometry:{type:'LineString',coordinates:segment.map(p=>[p.lng,p.lat])},properties:{type:'GPS track segment',segment:index+1,points:segment,warning:'Recorded on one device; gaps between segments are intentional; not live hunter sharing'}}))]}}
+function downloadGeojson(filename){const blob=new Blob([JSON.stringify(geojsonPayload(),null,2)],{type:'application/geo+json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+$('exportPins').onclick=()=>downloadGeojson('fieldtrack-map.geojson');
+$('exportTrack').onclick=()=>downloadGeojson('fieldtrack-map-and-track.geojson');
+$('exportGroup').onclick=()=>{const name=($('groupName').value||'hunting-group').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-');downloadGeojson('fieldtrack-'+name+'.geojson');$('shareStatus').textContent='Shared-map file exported. Send it privately to selected hunters. This is file sharing, not live syncing.'};
+$('importGroup').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{
+ const d=JSON.parse(await f.text());if(d.type!=='FeatureCollection'||!Array.isArray(d.features))throw Error('Not a GeoJSON FeatureCollection');
+ const incoming=[],polygons=[],lines=[];
+ for(const feature of d.features){const g=feature.geometry,p=feature.properties||{};if(!g)continue;
+  if(g.type==='Point'&&Array.isArray(g.coordinates)&&g.coordinates.length>=2){const [lng,lat]=g.coordinates;if(Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180)incoming.push(normalizePin({id:makePinId(),lat,lng,name:p.name||'',type:p.type||'Imported waypoint',note:p.note||'',time:p.time||new Date().toISOString()}))}
+  else if(g.type==='Polygon'||g.type==='MultiPolygon')polygons.push(feature);
+  else if(g.type==='LineString'||g.type==='MultiLineString')lines.push(feature);
+ }
+ const total=incoming.length+polygons.length+lines.length;if(!total)throw Error('No supported map features found');
+ if(confirm(`Import ${incoming.length} waypoints, ${polygons.length} boundary shapes and ${lines.length} tracks?`)){
+  pins.push(...incoming.filter(Boolean));drawPins();
+  polygons.forEach(feature=>{const p=feature.properties||{},ring=feature.geometry.type==='Polygon'?feature.geometry.coordinates[0]:feature.geometry.coordinates[0]?.[0];if(ring?.length>=4&&/property boundary/i.test(p.type||'')){savedBoundary=ring.slice(0,-1).map(([lng,lat])=>[lat,lng]);saveLocal('fieldtrack-boundary',savedBoundary);renderBoundary()}else L.geoJSON(feature).addTo(importedLayer)});
+  lines.forEach(feature=>L.geoJSON(feature,{style:{color:'#f3ca72',weight:4,dashArray:'5 4'}}).addTo(importedLayer));
+  $('shareStatus').textContent=`Imported ${incoming.length} waypoints, ${polygons.length} boundary shapes and ${lines.length} tracks from ${f.name}. Non-property shapes and imported tracks are displayed for this session.`;
+ }
+ }catch(err){$('shareStatus').textContent='Import failed: '+(err.message||'choose a valid GeoJSON FeatureCollection with Point, Polygon or LineString features.')}e.target.value='';};
+$('clearPins').onclick=()=>{if(confirm('Delete all saved pins from this browser?')){pins=[];drawPins()}};
+$('ownershipFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(ownershipLayer)map.removeLayer(ownershipLayer);ownershipLayer=L.geoJSON(data,{style:feature=>{const p=feature.properties||{},s=JSON.stringify(p).toLowerCase();return {color:s.includes('crown')?'#a7d36b':s.includes('private')?'#f3ca72':'#79b8e8',weight:2,fillOpacity:.12}},onEachFeature:(feature,layer)=>layer.bindPopup('<b>Boundary data</b><br>'+esc(JSON.stringify(feature.properties||{}).slice(0,700)))}).addTo(map);if(ownershipLayer.getBounds().isValid())map.fitBounds(ownershipLayer.getBounds());$('ownershipStatus').textContent='Loaded '+f.name+'. Colour is inferred from attribute text only; verify data source, date, and legal status.'}catch(err){$('ownershipStatus').textContent='Could not read file. Use valid GeoJSON/JSON.'}};
+$('enableCompass').onclick=async()=>{try{if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){const p=await DeviceOrientationEvent.requestPermission();if(p!=='granted')throw Error()}window.addEventListener('deviceorientationabsolute' in window?'deviceorientationabsolute':'deviceorientation',ev=>{let h;if(ev.webkitCompassHeading!=null)h=ev.webkitCompassHeading;else if(ev.alpha!=null)h=(360-ev.alpha)%360;if(h!=null){$('heading').textContent=Math.round(h)+'° '+cardinal(h);$('needle').style.transform=`rotate(${h}deg)`}},true);$('enableCompass').textContent='Compass enabled'}catch(e){$('heading').textContent='Unavailable';alert('Compass permission was denied or this device/browser does not provide heading data. Try opening the app in Safari on your phone over HTTPS.')}};
+</script>
+</body>
+</html>

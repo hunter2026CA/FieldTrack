@@ -4,9 +4,9 @@ A map-first hunting companion prototype focused on GPS maps, user-drawn property
 
 ## Current status
 
-- Current app entry point: **v10** (`index.html`)
-- Versioned snapshots: `FieldTrack_Interactive_Prototype_v10.html`, `FieldTrack_Interactive_Prototype_v9.html`, `FieldTrack_Interactive_Prototype_v8.html`, `FieldTrack_Interactive_Prototype_v7.html`, and `FieldTrack_Interactive_Prototype_v6.html`.
-- Automated checks: `test_saved_locations.cjs` covers current v10 named stands/waypoints; `test_boundary_controls.cjs` covers the v9 boundary workflow; `test_gps_v10.cjs` checks the current v10 GPS implementation; `test_gps_v9.cjs`, `test_gps_v7.cjs`, and `test_gps_v6.cjs` are historical regression checks for the archived versions they name.
+- Current app entry point: **v12** (`index.html`)
+- Versioned snapshots: `FieldTrack_Interactive_Prototype_v12.html`, `FieldTrack_Interactive_Prototype_v11.html`, `FieldTrack_Interactive_Prototype_v10.html`, `FieldTrack_Interactive_Prototype_v9.html`, `FieldTrack_Interactive_Prototype_v8.html`, `FieldTrack_Interactive_Prototype_v7.html`, and `FieldTrack_Interactive_Prototype_v6.html`.
+- Automated checks: `test_compass_wind_v12.cjs` checks the fixed cardinal compass, wind FROM/TOWARD math and arrow rotation; `test_weather_v11.cjs` checks current weather/wind display wiring; `test_saved_locations.cjs` covers current v10 named stands/waypoints; `test_boundary_controls.cjs` covers the v9 boundary workflow; `test_gps_v10.cjs` checks the current GPS tracking implementation (introduced in v10); `test_gps_v9.cjs`, `test_gps_v7.cjs`, and `test_gps_v6.cjs` are historical regression checks for the archived versions they name.
 - This is a browser prototype, not yet a production mobile app.
 
 ## Run locally
@@ -22,7 +22,11 @@ node --check test_boundary_controls.cjs
 node --check test_gps_v9.cjs
 node --check test_gps_v10.cjs
 node --check test_saved_locations.cjs
+node --check test_weather_v11.cjs
+node --check test_compass_wind_v12.cjs
 node test_saved_locations.cjs
+node test_weather_v11.cjs
+node test_compass_wind_v12.cjs
 node test_boundary_controls.cjs
 node test_gps_v10.cjs
 node test_gps_v9.cjs
@@ -30,7 +34,7 @@ node test_gps_v7.cjs
 node test_gps_v6.cjs
 ```
 
-The v6/v7/v9 GPS suites test their matching historical HTML snapshots. The v10 GPS suite exercises the current `index.html` GPS implementation. The boundary test checks the v9 boundary helper logic; the saved-location test covers v10 naming, filtering, editing, validation, escaping, and GeoJSON name round-trip wiring. All browser-facing tests use mocked APIs; they do not prove real-world iPhone GPS accuracy, background tracking, or production hosting behavior.
+The v12 compass test checks all four cardinal labels, the fixed north reference, meteorological wind FROM/TOWARD conversion, and rotation of the wind arrow. The weather test checks the current Open-Meteo request and wind-direction display wiring. The v6/v7/v9 GPS suites test their matching historical HTML snapshots. The v10 GPS suite exercises the current `index.html` GPS implementation (the GPS code has not changed in v12). The boundary test checks the v9 boundary helper logic; the saved-location test covers v10 naming, filtering, editing, validation, escaping, and GeoJSON name round-trip wiring. All browser-facing tests use mocked APIs; they do not prove real-world iPhone GPS accuracy, background tracking, or production hosting behavior.
 
 ## Agreed product scope
 

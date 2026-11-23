@@ -21,16 +21,29 @@ button{cursor:pointer;font-weight:650}button.primary{background:var(--accent);co
 .row{display:flex;gap:7px}.row>*{flex:1;min-width:0}
 .metric{font-size:20px;font-weight:750}.metric.compact{font-size:15px}.metric small{font-size:11px;color:var(--muted);font-weight:500}
 .status{font-size:12px;color:var(--muted);white-space:pre-wrap}.badge{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:3px 7px;font-size:11px;color:var(--muted)}
-#compass{width:74px;height:74px;border:2px solid var(--accent);border-radius:50%;position:relative;margin:auto;background:#111a13}
-#needle{position:absolute;left:33px;top:9px;width:4px;height:27px;background:#e75e50;transform-origin:50% 28px;clip-path:polygon(50% 0,100% 100%,50% 78%,0 100%)}
-#compass:after{content:"N";position:absolute;top:3px;left:33px;font-size:10px;color:var(--accent)}
+#compass{width:112px;height:112px;flex:0 0 112px;border:2px solid var(--accent);border-radius:50%;position:relative;margin:auto;background:#111a13;box-shadow:inset 0 0 0 1px #354638}
+.compass-label{position:absolute;font-size:10px;font-weight:800;color:var(--accent);line-height:1;z-index:4}
+.compass-label.north{top:7px;left:50%;transform:translateX(-50%)}
+.compass-label.east{right:7px;top:50%;transform:translateY(-50%)}
+.compass-label.south{bottom:7px;left:50%;transform:translateX(-50%)}
+.compass-label.west{left:7px;top:50%;transform:translateY(-50%)}
+.compass-arrow{position:absolute;left:calc(50% - 2px);bottom:50%;width:4px;height:38px;transform-origin:50% 100%;border-radius:3px 3px 0 0;z-index:2}
+.compass-arrow:before{content:"";position:absolute;top:-5px;left:-5px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent}
+.north-arrow{background:#a7d36b;z-index:2}
+.north-arrow:before{border-bottom:10px solid #a7d36b}
+.wind-arrow{height:43px;background:#e75e50;z-index:3;display:none}
+.wind-arrow:before{border-bottom:10px solid #e75e50}
+.compass-center{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;background:#f2f5ee;border:2px solid #111a13;transform:translate(-50%,-50%);z-index:5}
+.compass-layout{display:flex;align-items:center;gap:12px}
+.compass-readings{flex:1;min-width:0}
+.compass-readings .metric{font-size:16px}
 .leaflet-popup-content-wrapper{background:#18241a;color:#f2f5ee}.leaflet-popup-tip{background:#18241a}
 .saved-location{border-top:1px solid var(--line);padding:9px 0}.saved-location:first-child{border-top:0}.saved-location-title{font-weight:750;font-size:13px}.saved-location-meta{font-size:11px;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}.saved-location-actions{display:flex;gap:5px;margin-top:5px}.saved-location-actions button{padding:6px;font-size:11px;margin:0}.saved-location-actions button[data-action="delete"]{border-color:#81534b;color:#ffd1c9}
 @media(max-width:760px){main{display:flex;flex-direction:column;height:auto;min-height:calc(100dvh - 60px)}#map{order:0;height:48dvh;min-height:320px}aside{order:1;overflow:visible;border-right:0}.sub{display:none}}
 </style>
 </head>
 <body>
-<header><div><div class="brand">FIELD<span>TRACK</span></div><div class="sub">Interactive map • Wind • Pins • Boundaries • Distance</div></div><span class="badge">Interactive prototype v10</span></header>
+<header><div><div class="brand">FIELD<span>TRACK</span></div><div class="sub">Interactive map • Wind • Pins • Boundaries • Distance</div></div><span class="badge">Interactive prototype v12</span></header>
 <main>
 <aside>
  <div class="card"><h3>Map & terrain</h3>
@@ -55,9 +68,19 @@ button{cursor:pointer;font-weight:650}button.primary{background:var(--accent);co
   <p id="weatherText">Tap “My location” or the map to load local conditions.</p><button id="refreshWeather">Refresh weather</button>
   <p>Wind is forecast/model data, not a guaranteed on-site measurement. Gusts and local terrain can differ. Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.</p>
  </div>
- <div class="card"><h3>Compass & range</h3>
-  <div class="row" style="align-items:center"><div id="compass"><div id="needle"></div></div><div style="flex:1"><div id="heading" class="metric">—°</div><small>Heading</small><p id="rangeText">No range measured yet.</p></div></div>
-  <button id="enableCompass">Enable phone compass</button>
+ <div class="card"><h3>North & wind compass</h3>
+  <div class="compass-layout">
+   <div id="compass" role="img" aria-label="Fixed north-up compass. Green arrow points north. Red arrow shows where wind comes from.">
+    <span class="compass-label north">N</span><span class="compass-label east">E</span><span class="compass-label south">S</span><span class="compass-label west">W</span>
+    <div id="northArrow" class="compass-arrow north-arrow" aria-hidden="true"></div><div id="windArrow" class="compass-arrow wind-arrow" aria-hidden="true"></div><div class="compass-center" aria-hidden="true"></div>
+   </div>
+   <div class="compass-readings">
+    <div id="windFrom" class="metric">—</div><small>Wind FROM</small>
+    <div id="windToward" class="metric compact" style="margin-top:7px">—</div><small>Wind blows TOWARD</small>
+   </div>
+  </div>
+  <p id="windCompassHelp">The compass stays fixed with north at the top. The red arrow points toward the direction the wind comes FROM; the wind blows the opposite way.</p>
+  <p id="rangeText">No range measured yet.</p>
  </div>
  <div class="card"><h3>Animal tracking pins</h3>
   <select id="pinType"><option>Animal sighting</option><option>Blood trail</option><option>Last known location</option><option>Trail camera</option><option>Hunting stand</option><option>Ground blind</option><option>Bait pile</option><option>Track / sign</option><option>Parking / access</option><option>Other waypoint</option></select>
@@ -109,6 +132,18 @@ const $=id=>document.getElementById(id);
 function metersToYards(m){return m*1.0936133}
 function bearing(a,b){const r=Math.PI/180,lat1=a.lat*r,lat2=b.lat*r,dLon=(b.lng-a.lng)*r,y=Math.sin(dLon)*Math.cos(lat2),x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);return (Math.atan2(y,x)/r+360)%360}
 function cardinal(d){return ['N','NE','E','SE','S','SW','W','NW'][Math.round(d/45)%8]}
+function normalizeBearing(degrees){return ((Number(degrees)%360)+360)%360}
+function cardinal16(degrees){return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(normalizeBearing(degrees)/22.5)%16]}
+function formatBearing(degrees){return String(Math.round(normalizeBearing(degrees))%360).padStart(3,'0')}
+function windDirections(degrees){const from=normalizeBearing(degrees),toward=normalizeBearing(from+180);return {from,toward,fromLabel:cardinal16(from),towardLabel:cardinal16(toward)}}
+function updateWindCompass(degrees){
+ const arrow=$('windArrow'),fromEl=$('windFrom'),towardEl=$('windToward'),compass=$('compass');
+ if(degrees==null||degrees===''||!Number.isFinite(Number(degrees))){arrow.style.display='none';fromEl.textContent='Unavailable';towardEl.textContent='Unavailable';compass.setAttribute('aria-label','Fixed north-up compass. Wind direction is unavailable.');return null}
+ const wind=windDirections(degrees);arrow.style.display='block';arrow.style.transform=`rotate(${wind.from}deg)`;
+ fromEl.textContent=`${formatBearing(wind.from)}° ${wind.fromLabel}`;towardEl.textContent=`${formatBearing(wind.toward)}° ${wind.towardLabel}`;
+ compass.setAttribute('aria-label',`Fixed north-up compass. Green arrow points north. Red arrow points ${formatBearing(wind.from)} degrees ${wind.fromLabel}, where wind comes from. Wind blows toward ${formatBearing(wind.toward)} degrees ${wind.towardLabel}.`);
+ return wind;
+}
 function distance(a,b){return map.distance(a,b)}
 function nice(n){return Number(n).toFixed(1)}
 function saveLocal(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){return false}}
@@ -303,7 +338,7 @@ $('addPin').onclick=()=>{cancelBoundaryDrawing();mode='pin';$('addPin').classLis
 $('measure').onclick=()=>{cancelBoundaryDrawing();mode='measure';firstMeasure=null;$('measure').classList.add('active');$('addPin').classList.remove('active');$('rangeText').textContent='Tap your start point, then end point.';if(measureLine){map.removeLayer(measureLine);measureLine=null}};
 $('locate').onclick=()=>{if(!navigator.geolocation){$('weatherText').textContent='Location is not supported by this browser.';return}navigator.geolocation.getCurrentPosition(pos=>{const ll=[pos.coords.latitude,pos.coords.longitude];map.setView(ll,16);if(locationMarker)map.removeLayer(locationMarker);locationMarker=L.circleMarker(ll,{radius:8,color:'#a7d36b',fillOpacity:.8}).addTo(map).bindPopup('Your current location');loadWeather(ll[0],ll[1]);inspectElevation(ll[0],ll[1]);},()=>{$('weatherText').textContent='Location permission denied or unavailable. Tap the map to choose a location.'},{enableHighAccuracy:true,timeout:12000})};
 map.on('click',e=>{const ll=e.latlng;if(mode==='boundary'){boundaryPoints.push(ll);refreshBoundaryPreview();$('boundaryStatus').textContent=boundaryPoints.length+' boundary points added. '+(boundaryCanFinish(boundaryPoints)?'You can finish the boundary now, or undo/cancel.':'Add at least '+(3-boundaryPoints.length)+' more point(s) to finish.')}else if(mode==='measure'){if(!firstMeasure){firstMeasure=ll;$('rangeText').textContent='Start point set. Tap the end point.';L.circleMarker(ll,{radius:5,color:'#f3ca72'}).addTo(map)}else{if(measureLine)map.removeLayer(measureLine);measureLine=L.polyline([firstMeasure,ll],{color:'#f3ca72',weight:4,dashArray:'7 6'}).addTo(map);const m=distance(firstMeasure,ll),b=bearing(firstMeasure,ll);$('rangeText').textContent=`${nice(metersToYards(m))} yd (${nice(m)} m) • bearing ${Math.round(b)}° ${cardinal(b)}`;firstMeasure=null;mode='pin';$('measure').classList.remove('active')}}else if($('addPin').classList.contains('active')){const pin=normalizePin({id:makePinId(),lat:ll.lat,lng:ll.lng,name:$('pinName').value,type:$('pinType').value,note:$('pinNote').value,time:new Date().toISOString()});if(pin)pins.push(pin);drawPins();$('pinName').value='';$('pinNote').value='';$('addPin').classList.remove('active');L.popup().setLatLng(ll).setContent('Pin saved.').openOn(map)}else{selected=ll;$('coords').textContent=`${ll.lat.toFixed(6)}, ${ll.lng.toFixed(6)} • loading elevation…`;loadWeather(ll.lat,ll.lng);inspectElevation(ll.lat,ll.lng)}});
-async function loadWeather(lat,lon){$('weatherText').textContent='Loading current modelled conditions…';try{const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kmh&timezone=auto`;const r=await fetch(u);if(!r.ok)throw Error('Weather unavailable');const d=await r.json(),c=d.current;$('windSpeed').textContent=nice(c.wind_speed_10m)+' km/h';$('windDir').textContent=Math.round(c.wind_direction_10m)+'° '+cardinal(c.wind_direction_10m);$('weatherText').textContent=`${nice(c.temperature_2m)}°C • gusts ${nice(c.wind_gusts_10m)} km/h • updated ${c.time||'now'}. Direction is where wind comes FROM.`}catch(e){$('weatherText').textContent='Could not load weather. Check connection and try again.'}}
+async function loadWeather(lat,lon){$('weatherText').textContent='Loading current modelled conditions…';try{const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kmh&timezone=auto`;const r=await fetch(u);if(!r.ok)throw Error('Weather unavailable');const d=await r.json(),c=d.current,wind=updateWindCompass(c.wind_direction_10m);$('windSpeed').textContent=nice(c.wind_speed_10m)+' km/h';$('windDir').textContent=wind?`${formatBearing(wind.from)}° ${wind.fromLabel}`:'Unavailable';$('weatherText').textContent=`${nice(c.temperature_2m)}°C • gusts ${nice(c.wind_gusts_10m)} km/h • updated ${c.time||'now'}. Direction is where wind comes FROM.`}catch(e){updateWindCompass(null);$('windSpeed').textContent='—';$('windDir').textContent='Unavailable';$('weatherText').textContent='Could not load weather. Check connection and try again.'}}
 $('refreshWeather').onclick=()=>{const c=selected|| (locationMarker?locationMarker.getLatLng():map.getCenter());loadWeather(c.lat,c.lng)};
 async function inspectElevation(lat,lon){$('elevation').textContent='Loading…';try{const r=await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);if(!r.ok)throw Error();const d=await r.json();$('elevation').textContent=(d.elevation?.[0]!=null?Math.round(d.elevation[0])+' m':'Unavailable');$('coords').textContent=`${lat.toFixed(6)}, ${lon.toFixed(6)} • elevation estimate`}catch(e){$('elevation').textContent='Unavailable';$('coords').textContent=`${lat.toFixed(6)}, ${lon.toFixed(6)} • elevation lookup failed`}}
 function geojsonPayload(){return {type:'FeatureCollection',name:'FieldTrack',metadata:{group:$('groupName')?.value||'',shareNote:$('shareNote')?.value||'',exportedAt:new Date().toISOString()},features:[...pins.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{id:p.id,name:p.name||'',type:p.type,note:p.note,time:p.time}})),...(savedBoundary&&savedBoundary.length>=3?[{type:'Feature',geometry:{type:'Polygon',coordinates:[[...savedBoundary.map(p=>[p[1],p[0]]),[savedBoundary[0][1],savedBoundary[0][0]]]]},properties:{type:'User-drawn property boundary',warning:'User-drawn outline; not a legal survey'}}]:[]),...splitTrackSegments().filter(segment=>segment.length>1).map((segment,index)=>({type:'Feature',geometry:{type:'LineString',coordinates:segment.map(p=>[p.lng,p.lat])},properties:{type:'GPS track segment',segment:index+1,points:segment,warning:'Recorded on one device; gaps between segments are intentional; not live hunter sharing'}}))]}}
@@ -330,7 +365,7 @@ $('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{
  }catch(err){$('shareStatus').textContent='Import failed: '+(err.message||'choose a valid GeoJSON FeatureCollection with Point, Polygon or LineString features.')}e.target.value='';};
 $('clearPins').onclick=()=>{if(confirm('Delete all saved pins from this browser?')){pins=[];drawPins()}};
 $('ownershipFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(ownershipLayer)map.removeLayer(ownershipLayer);ownershipLayer=L.geoJSON(data,{style:feature=>{const p=feature.properties||{},s=JSON.stringify(p).toLowerCase();return {color:s.includes('crown')?'#a7d36b':s.includes('private')?'#f3ca72':'#79b8e8',weight:2,fillOpacity:.12}},onEachFeature:(feature,layer)=>layer.bindPopup('<b>Boundary data</b><br>'+esc(JSON.stringify(feature.properties||{}).slice(0,700)))}).addTo(map);if(ownershipLayer.getBounds().isValid())map.fitBounds(ownershipLayer.getBounds());$('ownershipStatus').textContent='Loaded '+f.name+'. Colour is inferred from attribute text only; verify data source, date, and legal status.'}catch(err){$('ownershipStatus').textContent='Could not read file. Use valid GeoJSON/JSON.'}};
-$('enableCompass').onclick=async()=>{try{if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){const p=await DeviceOrientationEvent.requestPermission();if(p!=='granted')throw Error()}window.addEventListener('deviceorientationabsolute' in window?'deviceorientationabsolute':'deviceorientation',ev=>{let h;if(ev.webkitCompassHeading!=null)h=ev.webkitCompassHeading;else if(ev.alpha!=null)h=(360-ev.alpha)%360;if(h!=null){$('heading').textContent=Math.round(h)+'° '+cardinal(h);$('needle').style.transform=`rotate(${h}deg)`}},true);$('enableCompass').textContent='Compass enabled'}catch(e){$('heading').textContent='Unavailable';alert('Compass permission was denied or this device/browser does not provide heading data. Try opening the app in Safari on your phone over HTTPS.')}};
+
 </script>
 </body>
 </html>
