@@ -127,6 +127,8 @@ button{cursor:pointer;font-weight:650}button.primary{background:var(--accent);co
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
 <script>
+// Define the DOM lookup helper before any event handlers use it.
+const $=id=>document.getElementById(id);
 const map=L.map('map');
 // Restore the last map position locally so hunters reopen the same property area.
 let initialView=null;try{initialView=JSON.parse(localStorage.getItem('fieldtrack-map-view')||'null')}catch(e){initialView=null}
@@ -147,7 +149,7 @@ document.querySelectorAll('.ft-nav button').forEach(b=>b.addEventListener('click
 let boundaryPoints=[], boundaryLayer=null, boundaryPreview=null, savedBoundary=null;
 let trackPoints=[], trackLines=[], trackWatchId=null;
 try{savedBoundary=JSON.parse(localStorage.getItem('fieldtrack-boundary')||'null')}catch(e){savedBoundary=null}
-const $=id=>document.getElementById(id);
+
 function metersToYards(m){return m*1.0936133}
 function bearing(a,b){const r=Math.PI/180,lat1=a.lat*r,lat2=b.lat*r,dLon=(b.lng-a.lng)*r,y=Math.sin(dLon)*Math.cos(lat2),x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);return (Math.atan2(y,x)/r+360)%360}
 function cardinal(d){return ['N','NE','E','SE','S','SW','W','NW'][Math.round(d/45)%8]}

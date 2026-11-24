@@ -1,0 +1,10 @@
+const fs = require('fs');
+const html = fs.readFileSync('index.html', 'utf8');
+const helper = html.indexOf("const $=id=>document.getElementById(id);");
+const firstUse = html.indexOf("$('toggleCrown').addEventListener");
+if (helper < 0 || firstUse < 0 || helper > firstUse) throw new Error('DOM lookup helper must be declared before navigation/Crown Land event handlers');
+const script = html.match(/<script>\s*([\s\S]*?)\s*<\/script>/);
+if (!script) throw new Error('Inline application script not found');
+fs.writeFileSync('/tmp/fieldtrack-inline-check.js', script[1]);
+require('child_process').execFileSync(process.execPath, ['--check', '/tmp/fieldtrack-inline-check.js']);
+console.log('PASS: DOM helper initializes before event handlers; inline application JavaScript syntax is valid.');
