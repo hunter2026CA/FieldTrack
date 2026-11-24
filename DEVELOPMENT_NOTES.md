@@ -190,3 +190,24 @@ The v10 code and tests are prepared in this workspace, but no authenticated GitH
 - Full regression run passed: `test_saved_locations.cjs`, `test_weather_v11.cjs`, `test_compass_wind_v12.cjs`, `test_boundary_controls.cjs`, `test_gps_v10.cjs`, `test_gps_v9.cjs`, `test_gps_v7.cjs`, and `test_gps_v6.cjs`. All eight test scripts also passed `node --check`.
 - These are mocked/static checks, not a physical iPhone compass, GPS, or live weather validation.
 - No authenticated GitHub connection or configured remote is available in this workspace. The v12 package is prepared locally but has not been pushed or deployed. The user must upload the extracted package contents to the existing private repository and verify the hosted page before testing on iPhone.
+
+
+## v13.1 update — 2026-11-24
+
+- Kept the map as the default full-screen view and the five fixed bottom tabs: Map, Stands, Tracking, Weather, and Land.
+- Added a manual **Map backup & restore** card to the Land tab. It exports/imports pins, user-drawn property boundaries, and recorded GPS tracks as GeoJSON; this is a device-file backup, not live multi-hunter sharing.
+- Removed stale group-specific export/import handlers left behind when the earlier v13 UI removed its shared-map card. Those handlers referenced missing DOM elements and could stop the remainder of the page script during startup. The new backup controls replace that broken path without adding group chat or shared trail-camera uploads.
+- Synchronized `aria-pressed` state between the Crown Land toggle in the Land panel and the quick toggle over the map, and added explicit Government of Nova Scotia attribution to the map layer.
+- Updated the saved-location regression test to recognize the new full-viewport map layout. Added checks that all literal `$()` lookups point to existing HTML IDs.
+- Source check: the official Nova Scotia Open Data entry describes the Crown Land Map dataset and links directly to the `PLANCrownLandsWM84V1/MapServer` service. The app uses that published service; the overlay remains a reference only, not proof of access or permission.
+
+### v13.1 verification
+
+- `node --check` passed for all nine `test_*.cjs` scripts.
+- All nine test scripts passed: `test_mapfirst_crown_v13.cjs`, `test_saved_locations.cjs`, `test_weather_v11.cjs`, `test_compass_wind_v12.cjs`, `test_boundary_controls.cjs`, `test_gps_v10.cjs`, `test_gps_v9.cjs`, `test_gps_v7.cjs`, and `test_gps_v6.cjs`.
+- ZIP integrity check passed after packaging.
+- These checks are static/mocked. A live browser run, live Crown Land image requests, iPhone GPS, HTTPS deployment, and Pages deployment were not available from this workspace and remain to be tested after the user uploads/commits the package.
+
+### Current delivery blocker after v13.1
+
+The private GitHub repository is user-controlled and no authenticated GitHub connector or remote is configured in this workspace. The v13.1 package is prepared in the persistent project Library, but this run did not upload, commit, or deploy it to GitHub. The next user action is to upload the extracted v13.1 package contents to the existing `hunter2026CA/FieldTrack` repository and commit them.

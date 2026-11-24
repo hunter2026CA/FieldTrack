@@ -13,7 +13,7 @@ assert(/id="pinNote" maxlength="280"/.test(html), 'field notes must have a 280-c
 assert(html.includes("name:$('pinName').value"), 'new map pins must save the supplied location name');
 assert(html.includes("properties:{id:p.id,name:p.name||'',type:p.type,note:p.note,time:p.time}"), 'GeoJSON export must retain location names');
 assert(html.includes("name:p.name||'',type:p.type||'Imported waypoint'"), 'GeoJSON import must restore location names');
-assert(/#map\{order:0;/.test(html), 'the map must remain first in the mobile layout');
+assert(/#map\{position:absolute;inset:0;width:100%;height:100%;min-height:0;z-index:1\}/.test(html), 'the map must fill the main viewport behind the bottom navigation');
 
 const inline = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
   .map(match => match[1]).filter(script => script.trim()).join('\n');
