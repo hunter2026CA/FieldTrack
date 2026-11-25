@@ -15,8 +15,8 @@ assert(/id="fitBoundary" disabled/.test(html), 'fit must start disabled until a 
 assert(html.includes("$('fitBoundary').onclick=()=>{if(!fitSavedBoundary())"), 'fit button must invoke the saved-boundary fit action');
 assert(html.includes("$('undoBoundary').onclick=undoBoundaryPoint"), 'undo button must call its handler');
 assert(html.includes("$('cancelBoundary').onclick=cancelBoundaryDrawing"), 'cancel button must call its handler');
-assert(html.includes("cancelBoundaryDrawing();mode='pin'"), 'switching to pin mode must cancel an unfinished boundary');
-assert(html.includes("cancelBoundaryDrawing();mode='measure'"), 'switching to measure mode must cancel an unfinished boundary');
+assert(html.includes("cancelBoundaryDrawing();cancelAreaMeasurement();mode='pin'"), 'switching to pin mode must cancel unfinished boundary and area measurements');
+assert(html.includes("cancelBoundaryDrawing();cancelAreaMeasurement();mode='measure'"), 'switching to distance mode must cancel unfinished boundary and area measurements');
 assert(html.includes('boundaryPoints.push(ll);refreshBoundaryPreview()'), 'map taps must refresh the boundary preview');
 
 const inline = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]

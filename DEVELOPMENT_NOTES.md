@@ -211,3 +211,12 @@ The v10 code and tests are prepared in this workspace, but no authenticated GitH
 ### Current delivery blocker after v13.1
 
 The private GitHub repository is user-controlled and no authenticated GitHub connector or remote is configured in this workspace. The v13.1 package is prepared in the persistent project Library, but this run did not upload, commit, or deploy it to GitHub. The next user action is to upload the extracted v13.1 package contents to the existing `hunter2026CA/FieldTrack` repository and commit them.
+
+## v13.3 update — GPS speedometer (2026-11-24)
+
+- Added a prominent live GPS speed readout to the Tracking tab, with a km/h or mph selector.
+- Added session maximum speed and average speed (recorded route distance divided by recorded segment time). The maximum is included in the local track-session checkpoint.
+- Uses the browser's GPS speed when available; otherwise derives speed from consecutive valid GPS fixes. Unit preference is stored locally.
+- Increased the movement-jump filter ceiling from 12 m/s to 80 m/s so normal ATV and boat travel speeds are supported without being discarded. Extreme calculated jumps remain rejected.
+- Regression: `test_speedometer_v13_3.cjs` and the existing GPS, navigation, saved-location, weather, compass, and boundary tests pass. Inline application JavaScript syntax check passes.
+- Automated tests are static/mocked; actual iPhone GPS accuracy, update cadence, and background behavior still require testing on the HTTPS-hosted app.
