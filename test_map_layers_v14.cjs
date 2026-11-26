@@ -30,9 +30,14 @@ state.maptype.value = 'street';
 ctx.updateSatelliteLabels();
 assert.equal(active.size, 0, 'labels must remain hidden on the road map');
 
-assert(html.includes('dynamicLayers:[{id:0,source:{type:\'mapLayer\',mapLayerId:0}'), 'Crown Land style override must target official layer 0');
-assert(html.includes('color:[39,137,215,82]'), 'Crown Land fill should be blue with about 68% transparency');
-assert(html.includes('color:[19,85,151,230]'), 'Crown Land outline should be a darker blue');
+assert(html.includes('const crownLandDynamicLayers=[{id:0,source:{type:\'mapLayer\',mapLayerId:0}'), 'Crown Land style override must target official layer 0');
+assert(html.includes('dynamicLayers:crownLandDynamicLayers'), 'styled dynamic layer definition must be passed to Esri Leaflet');
+assert(html.includes('color:[39,137,215,92]'), 'Crown Land fill should be translucent blue');
+assert(html.includes('.legend-swatch.crown{background:rgba(39,137,215,.36)'), 'map legend swatch should match the blue Crown Land fill');
+assert(html.includes("format:'png32'") && html.includes("f:'json'"), 'Crown Land image requests should preserve alpha and return structured service errors');
+assert(html.includes("crownLandLayer.on('requesterror'"), 'Crown Land service errors should be surfaced in the UI');
+assert(html.includes('Blue Crown Land overlay loaded.'), 'successful Crown Land load should report the requested blue style');
+assert(html.includes('color:[19,85,151,235]'), 'Crown Land outline should be a darker blue');
 assert(html.includes('<h3>Map legend</h3>'), 'Land tab must include a map legend');
 assert(html.includes('exact source and meaning are not verified'), 'orange triangle legend must preserve uncertainty');
 assert(html.includes('not FieldTrack pins or Crown Land indicators'), 'orange triangles must not be misidentified as app data');

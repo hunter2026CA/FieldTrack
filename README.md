@@ -4,9 +4,9 @@ A map-first hunting companion prototype focused on GPS maps, user-drawn property
 
 ## Current status
 
-- Current app entry point: **v14.1** (`index.html`)
-- Versioned snapshots: `FieldTrack_Interactive_Prototype_v14.html`, `FieldTrack_Interactive_Prototype_v13.3.html`, `FieldTrack_Interactive_Prototype_v13.html`, `FieldTrack_Interactive_Prototype_v12.html`, `FieldTrack_Interactive_Prototype_v11.html`, `FieldTrack_Interactive_Prototype_v10.html`, `FieldTrack_Interactive_Prototype_v9.html`, `FieldTrack_Interactive_Prototype_v8.html`, `FieldTrack_Interactive_Prototype_v7.html`, and `FieldTrack_Interactive_Prototype_v6.html`.
-- `test_speedometer_v14.cjs` checks km/h (kph), mph, and knots conversion/persistence. `test_speedometer_v13_3.cjs` retains the original v13.3 GPS speed regression coverage. `test_map_layers_v14.cjs` checks satellite road/place label toggles, Crown Land symbology, and the map legend; `test_wind_forecast_v14.cjs` exercises the 24-hour wind forecast renderer; `test_area_measurement_v14.cjs` checks polygon area math and controls.
+- Current app entry point: **v14.2** (`index.html`)
+- Versioned snapshots: `FieldTrack_Interactive_Prototype_v14.html` (v14.2), `FieldTrack_Interactive_Prototype_v14.1.html` (previous checkpoint), `FieldTrack_Interactive_Prototype_v13.3.html`, `FieldTrack_Interactive_Prototype_v13.html`, `FieldTrack_Interactive_Prototype_v12.html`, `FieldTrack_Interactive_Prototype_v11.html`, `FieldTrack_Interactive_Prototype_v10.html`, `FieldTrack_Interactive_Prototype_v9.html`, `FieldTrack_Interactive_Prototype_v8.html`, `FieldTrack_Interactive_Prototype_v7.html`, and `FieldTrack_Interactive_Prototype_v6.html`.
+- `test_speedometer_v14.cjs` checks km/h (kph), mph, and knots conversion/persistence. `test_speedometer_v13_3.cjs` retains the original v13.3 GPS speed regression coverage. `test_map_layers_v14.cjs` checks satellite road/place label toggles, v14.2 blue Crown Land symbology and service-error handling, and the map legend; `test_wind_forecast_v14.cjs` exercises the 24-hour wind forecast renderer; `test_area_measurement_v14.cjs` checks polygon area math and controls.
 - Automated checks: `test_mapfirst_crown_v13.cjs` checks the map-first viewport, five-tab navigation, Crown Land layer wiring, backup/restore controls, and that all literal DOM lookups resolve; `test_compass_wind_v12.cjs` checks the fixed cardinal compass, wind FROM/TOWARD math and arrow rotation; `test_weather_v11.cjs` checks current weather/wind display wiring; `test_saved_locations.cjs` covers current v10 named stands/waypoints; `test_boundary_controls.cjs` covers the v9 boundary workflow; `test_gps_v10.cjs` checks the current GPS tracking implementation (introduced in v10); `test_gps_v9.cjs`, `test_gps_v7.cjs`, and `test_gps_v6.cjs` are historical regression checks for the archived versions they name.
 - This is a browser prototype, not yet a production mobile app.
 
@@ -110,3 +110,18 @@ Make changes on a feature branch where practical, run the checks above, review t
 - A headless Chromium attempt could not load the app in this environment because the browser policy blocks local site access and the external Leaflet CDN was unreachable. Therefore, the live map tiles, Esri label overlays, Crown Land renderer, Open-Meteo live response, and physical iPhone GPS remain unverified. The new forecast renderer and map interactions were tested with mocked data/APIs.
 - The current GitHub Pages deployment was not changed. No authenticated GitHub connection or configured Git remote is available in this workspace; the user must upload and commit the v14.1 package to `hunter2026CA/FieldTrack` before it can be tested on the hosted HTTPS page.
 - Open-Meteo documents free access for non-commercial use, but production usage, attribution, map-tile terms, hosting, and total operating costs still need review. No no-subscription guarantee is made.
+
+
+## v14.2 Crown Land colour correction — 2026-11-26
+
+- Restored an explicit ArcGIS dynamic-layer renderer for official Crown Land layer 0 so the server's default light-green style is overridden with a translucent blue fill (`[39,137,215,92]`) and a darker blue outline (`[19,85,151,235]`).
+- Uses PNG32 output to preserve transparency and Esri Leaflet's JSON response mode so service-side errors can be surfaced rather than silently looking like a successful image request.
+- Replaced the ineffective `tileerror` status handler with the documented ArcGIS `requesterror` event. The status now distinguishes a successfully loaded styled overlay from a rejected request.
+- Preserved the v14.1 app snapshot before updating the current v14 snapshot. The map legend swatch now matches the requested blue fill.
+- The official Geocortex service catalogue reports the Nova Scotia Crown Land service as dynamic and `Supports Dynamic Layers: True`; Esri Leaflet documents `dynamicLayers` as the supported symbology override mechanism. These metadata/docs support the implementation, but only the hosted app can confirm that the server actually returns the blue renderer to the user's device.
+
+### v14.2 verification
+
+- `test_map_layers_v14.cjs` checks the blue fill/outline, PNG32/JSON request mode, dynamic layer target, error event wiring, legend swatch, and satellite label toggles.
+- Extracted application JavaScript passed `node --check`; all 15 `test_*.cjs` scripts passed both syntax checks and execution, including the v14.2 Crown Land style/error-handling checks and the 24-hour wind-forecast missing-value regression.
+- No GitHub push or Pages deployment was performed: this workspace has no authenticated GitHub connection or configured remote. Upload and commit the package, then verify the hosted map on the user's iPhone.

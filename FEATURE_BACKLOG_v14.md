@@ -2,15 +2,23 @@
 
 This file records the feature ideas visible in the four reference screenshots supplied for FieldTrack. It separates work already in the prototype from ideas that need data-source, licensing, privacy, or architecture review. It is not a claim that every screenshot feature is implemented.
 
-## Already implemented or advanced in v14.0
+## Already implemented or advanced in v14.2
 
 - **iTrack / GPS route:** local device GPS recording and recovery, with a live speedometer in km/h (kph), mph, or knots.
-- **LandZone foundation:** official Nova Scotia Crown Land reference overlay, now styled blue and translucent. It does not prove public access or permission to hunt.
+- **Crown Land reference overlay:** official Nova Scotia Crown Land map service. v14.2 requests a translucent blue renderer; final colour still requires confirmation on the hosted app. It does not prove public access or permission to hunt.
 - **Measure distance:** two-point distance and bearing measurement.
 - **Measure area:** temporary polygon measurement with m², hectares, and acres.
-- **Wind & Weather:** current conditions, fixed north/wind compass, and on-demand 24-hour wind speed/gust/direction forecast.
+- **Wind & Weather:** current conditions, fixed north/wind compass, and on-demand 24-hour wind speed/gust/direction forecast. The requested 7-day forecast is still pending.
 - **Satellite map labels:** optional road and place-name overlays.
 - **My map locations:** saved stands and waypoints, user-drawn property boundary, GPS route, and manual GeoJSON backup/restore.
+
+
+## User-requested additions still to implement
+
+- **Seven-day wind forecast:** expand the Weather tab from its current 24-hour hourly view to a seven-day outlook, keeping wind direction (FROM), speed, and gusts clear and distinguishing daily summaries from hourly values.
+- **2D / 3D terrain views:** add selectable map-view modes so the user can switch between standard 2D mapping and a 3D terrain perspective. Validate the chosen elevation/terrain provider and mobile performance before promising offline or unrestricted use.
+- **Harvest log:** record harvested wildlife such as deer and ducks, including species/breed, quantity, date/time, GPS location/coordinates, notes, season records, and an attached photo for each entry. Keep entries private to the user's device/account unless a separate sharing feature is explicitly approved.
+- **LandZone (duck hunting):** build this as a duck-hunting approach aid that uses wind direction to indicate/predict the direction ducks are likely to approach from. It is not a land-ownership, property-boundary, or Crown Land feature.
 
 ## Compatible ideas to evaluate next
 

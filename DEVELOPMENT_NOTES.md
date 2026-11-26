@@ -220,3 +220,19 @@ The private GitHub repository is user-controlled and no authenticated GitHub con
 - Increased the movement-jump filter ceiling from 12 m/s to 80 m/s so normal ATV and boat travel speeds are supported without being discarded. Extreme calculated jumps remain rejected.
 - Regression: `test_speedometer_v13_3.cjs` and the existing GPS, navigation, saved-location, weather, compass, and boundary tests pass. Inline application JavaScript syntax check passes.
 - Automated tests are static/mocked; actual iPhone GPS accuracy, update cadence, and background behavior still require testing on the HTTPS-hosted app.
+
+
+## v14.2 Crown Land colour correction — 2026-11-26
+
+- User-confirmed result from v14.1: the official Crown Land layer is now visible, but its fill remains light green. This confirms the base map service is returning parcels; the remaining issue is the renderer colour.
+- Restored a per-request dynamic layer renderer targeting official MapServer layer 0, with a blue polygon fill (RGBA 39,137,215,92) and dark blue outline (RGBA 19,85,151,235). The style is applied through the documented `dynamicLayers` option and the service's `mapLayerId: 0` source.
+- Changed the export image format to PNG32 and the Esri Leaflet response mode to JSON. This preserves alpha transparency and allows service response errors to be surfaced.
+- Added a `requesterror` handler; the prior `tileerror` handler was not the documented MapService error event for this dynamic image layer.
+- Matched the map legend to the blue fill and retained the previous v14.1 HTML as `FieldTrack_Interactive_Prototype_v14.1.html`.
+- Fixed a wind-forecast data edge case discovered by the regression test: JavaScript treats `Number(null)` as zero, so absent hourly speed/gust/direction values could be displayed as `0.0 km/h` or `000° N`. The forecast now explicitly rejects `null`, `undefined`, and empty values and displays an em dash.
+
+### v14.2 verification
+
+- Extracted inline application JavaScript passed `node --check` (49,047 characters). All 15 test scripts passed `node --check` and execution, including the Crown Land style/legend checks, all GPS and saved-location regressions, speedometer units, map-first navigation, boundary tools, weather/compass, area measurement, and 24-hour wind forecast missing-value handling.
+- The Geocortex catalogue for the official Nova Scotia service reports `Supports Dynamic Layers: True` and server version 11.5. Esri Leaflet documents the `dynamicLayers` option and `setDynamicLayers` method as the supported way to override service symbology.
+- This is not yet a live server/device verification. The user must upload and commit the package, then confirm the hosted overlay colour. The workspace still has no authenticated GitHub connection or configured remote.
