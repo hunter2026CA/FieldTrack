@@ -4,9 +4,9 @@ A map-first hunting companion prototype focused on GPS maps, user-drawn property
 
 ## Current status
 
-- Current app entry point: **v14.2** (`index.html`)
-- Versioned snapshots: `FieldTrack_Interactive_Prototype_v14.html` (v14.2), `FieldTrack_Interactive_Prototype_v14.1.html` (previous checkpoint), `FieldTrack_Interactive_Prototype_v13.3.html`, `FieldTrack_Interactive_Prototype_v13.html`, `FieldTrack_Interactive_Prototype_v12.html`, `FieldTrack_Interactive_Prototype_v11.html`, `FieldTrack_Interactive_Prototype_v10.html`, `FieldTrack_Interactive_Prototype_v9.html`, `FieldTrack_Interactive_Prototype_v8.html`, `FieldTrack_Interactive_Prototype_v7.html`, and `FieldTrack_Interactive_Prototype_v6.html`.
-- `test_speedometer_v14.cjs` checks km/h (kph), mph, and knots conversion/persistence. `test_speedometer_v13_3.cjs` retains the original v13.3 GPS speed regression coverage. `test_map_layers_v14.cjs` checks satellite road/place label toggles, v14.2 blue Crown Land symbology and service-error handling, and the map legend; `test_wind_forecast_v14.cjs` exercises the 24-hour wind forecast renderer; `test_area_measurement_v14.cjs` checks polygon area math and controls.
+- Current app entry point: **v14.3** (`index.html`)
+- Versioned snapshots: `FieldTrack_Interactive_Prototype_v14.3.html` (v14.3), `FieldTrack_Interactive_Prototype_v14.2.html` (v14.2), `FieldTrack_Interactive_Prototype_v14.html` (v14.2), `FieldTrack_Interactive_Prototype_v14.1.html` (previous checkpoint), `FieldTrack_Interactive_Prototype_v13.3.html`, `FieldTrack_Interactive_Prototype_v13.html`, `FieldTrack_Interactive_Prototype_v12.html`, `FieldTrack_Interactive_Prototype_v11.html`, `FieldTrack_Interactive_Prototype_v10.html`, `FieldTrack_Interactive_Prototype_v9.html`, `FieldTrack_Interactive_Prototype_v8.html`, `FieldTrack_Interactive_Prototype_v7.html`, and `FieldTrack_Interactive_Prototype_v6.html`.
+- `test_speedometer_v14.cjs` checks km/h (kph), mph, and knots conversion/persistence. `test_speedometer_v13_3.cjs` retains the original v13.3 GPS speed regression coverage. `test_map_layers_v14.cjs` checks satellite road/place label toggles, v14.2 blue Crown Land symbology and service-error handling, and the map legend; `test_wind_forecast_v14_3.cjs` exercises the seven-day daily wind forecast renderer; `test_wind_forecast_race_v14_3.cjs` checks that out-of-order requests and stale errors cannot overwrite the forecast for the latest selected map point; `test_wind_forecast_v14.cjs` retains 24-hour historical regression coverage; `test_area_measurement_v14.cjs` checks polygon area math and controls.
 - Automated checks: `test_mapfirst_crown_v13.cjs` checks the map-first viewport, five-tab navigation, Crown Land layer wiring, backup/restore controls, and that all literal DOM lookups resolve; `test_compass_wind_v12.cjs` checks the fixed cardinal compass, wind FROM/TOWARD math and arrow rotation; `test_weather_v11.cjs` checks current weather/wind display wiring; `test_saved_locations.cjs` covers current v10 named stands/waypoints; `test_boundary_controls.cjs` covers the v9 boundary workflow; `test_gps_v10.cjs` checks the current GPS tracking implementation (introduced in v10); `test_gps_v9.cjs`, `test_gps_v7.cjs`, and `test_gps_v6.cjs` are historical regression checks for the archived versions they name.
 - This is a browser prototype, not yet a production mobile app.
 
@@ -21,6 +21,8 @@ Requires Node.js 18 or newer. From the project root:
 ```sh
 node --check test_speedometer_v14.cjs
 node --check test_map_layers_v14.cjs
+node --check test_wind_forecast_v14_3.cjs
+node --check test_wind_forecast_race_v14_3.cjs
 node --check test_wind_forecast_v14.cjs
 node --check test_area_measurement_v14.cjs
 node --check test_speedometer_v13_3.cjs
@@ -34,6 +36,8 @@ node --check test_compass_wind_v12.cjs
 node --check test_navigation_init_v13_2.cjs
 node test_speedometer_v14.cjs
 node test_map_layers_v14.cjs
+node test_wind_forecast_v14_3.cjs
+node test_wind_forecast_race_v14_3.cjs
 node test_wind_forecast_v14.cjs
 node test_area_measurement_v14.cjs
 node test_speedometer_v13_3.cjs
@@ -125,3 +129,18 @@ Make changes on a feature branch where practical, run the checks above, review t
 - `test_map_layers_v14.cjs` checks the blue fill/outline, PNG32/JSON request mode, dynamic layer target, error event wiring, legend swatch, and satellite label toggles.
 - Extracted application JavaScript passed `node --check`; all 15 `test_*.cjs` scripts passed both syntax checks and execution, including the v14.2 Crown Land style/error-handling checks and the 24-hour wind-forecast missing-value regression.
 - No GitHub push or Pages deployment was performed: this workspace has no authenticated GitHub connection or configured remote. Upload and commit the package, then verify the hosted map on the user's iPhone.
+
+
+## v14.3 seven-day wind forecast update — 2026-11-26
+
+- Expanded the Weather tab forecast from 24 hourly rows to a seven-day daily outlook.
+- Uses Open-Meteo daily maximum wind speed, maximum gust, and dominant wind direction; direction is explicitly labelled as where wind comes FROM.
+- Displays weekday labels, km/h values, a seven-day request, loading/error states, and unavailable markers rather than converting missing API values to zero or north.
+- Keeps the selected map point/device location behavior and stale-request guard.
+- Preserved the v14.2 app snapshot as `FieldTrack_Interactive_Prototype_v14.2.html` and saved the v14.3 app snapshot as `FieldTrack_Interactive_Prototype_v14.3.html`.
+- Added `test_wind_forecast_v14_3.cjs` for seven-day request parameters, seven daily rows, wind direction, status text, and missing-value handling.
+- This is a code-level/mock-data verification; live Open-Meteo availability and the hosted iPhone UI still require testing after the user commits the update.
+
+## Map-view architecture note — 2026-11-27
+
+`MAP_VIEWS_TECHNICAL_SPIKE.md` records the current Leaflet 2D architecture, a MapLibre-based 3D terrain evaluation path, provider/licensing checks, and the unresolved meaning of 4D. It is a planning/technical note only; no 3D engine or 4D UI has been added to the app.

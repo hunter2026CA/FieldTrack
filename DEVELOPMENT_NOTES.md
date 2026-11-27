@@ -236,3 +236,12 @@ The private GitHub repository is user-controlled and no authenticated GitHub con
 - Extracted inline application JavaScript passed `node --check` (49,047 characters). All 15 test scripts passed `node --check` and execution, including the Crown Land style/legend checks, all GPS and saved-location regressions, speedometer units, map-first navigation, boundary tools, weather/compass, area measurement, and 24-hour wind forecast missing-value handling.
 - The Geocortex catalogue for the official Nova Scotia service reports `Supports Dynamic Layers: True` and server version 11.5. Esri Leaflet documents the `dynamicLayers` option and `setDynamicLayers` method as the supported way to override service symbology.
 - This is not yet a live server/device verification. The user must upload and commit the package, then confirm the hosted overlay colour. The workspace still has no authenticated GitHub connection or configured remote.
+
+
+## v14.3.1 verification hardening and map-view spike — 2026-11-27
+
+- Added `test_wind_forecast_race_v14_3.cjs`. It deliberately resolves two forecast requests out of order and verifies that the latest selected map point remains displayed; it also verifies that a late failure from an older request cannot replace a newer successful forecast.
+- Added `MAP_VIEWS_TECHNICAL_SPIKE.md` after inspecting the current map implementation. The current app is Leaflet-based 2D raster mapping with point elevation lookup, not a 3D terrain map. The note evaluates MapLibre GL JS `raster-dem`/`setTerrain` as the first 3D proof-of-concept candidate and records provider/attribution/cost and Crown Land overlay migration checks.
+- 4D remains undefined. A time dimension is documented only as a possible GIS interpretation, not an agreed feature definition. No 3D/4D engine or UI was added in this run.
+- Validation: see the run summary for the full regression suite and extracted application JavaScript syntax check. These remain static/mock checks, not live iPhone, map-provider, or deployed-site verification.
+- GitHub upload/commit/deployment was not performed because this workspace has no authenticated GitHub connection or configured remote.

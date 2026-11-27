@@ -1,7 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
-const html = fs.readFileSync('index.html', 'utf8');
+const html = fs.readFileSync('FieldTrack_Interactive_Prototype_v14.2.html', 'utf8');
 const inline = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m => m[1]).filter(s => s.trim()).join('\n');
 for (const id of ['showWindForecast','windForecast','windForecastStatus','windForecastList']) assert(new RegExp(`id="${id}"`).test(html), `missing ${id}`);
 assert(html.includes('forecast_hours=24'), 'forecast request must cover 24 hours');
