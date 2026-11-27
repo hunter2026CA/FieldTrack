@@ -144,3 +144,10 @@ Make changes on a feature branch where practical, run the checks above, review t
 ## Map-view architecture note — 2026-11-27
 
 `MAP_VIEWS_TECHNICAL_SPIKE.md` records the current Leaflet 2D architecture, a MapLibre-based 3D terrain evaluation path, provider/licensing checks, and the unresolved meaning of 4D. It is a planning/technical note only; no 3D engine or 4D UI has been added to the app.
+
+## Isolated MapLibre 3D terrain spike — 2026-11-27
+
+- Added `maplibre_3d_spike.html`, a disposable 3D terrain test centered on Nova Scotia. It uses MapLibre GL JS with a demo style and demo raster-DEM endpoint, includes a 2D/3D toggle and reset control, and does not alter or replace the production `index.html` Leaflet map.
+- Added `test_maplibre_3d_spike.cjs` to verify the terrain source, toggle/reset wiring, test location, and explicit demo-only warning.
+- This is a browser proof-of-concept, not a production map. Demo tiles are for evaluation only; imagery/DEM terms, Nova Scotia coverage, attribution, quota, iPhone performance, and operating costs must be validated before release.
+- To try it, serve the project folder over localhost or HTTPS and open `maplibre_3d_spike.html`. A direct `file://` open may be blocked by browser security. The automated test checks source wiring only; it does not verify live tile delivery or WebGL rendering.

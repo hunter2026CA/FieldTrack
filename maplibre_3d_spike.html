@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>FieldTrack — isolated 3D terrain test</title>
+  <link href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet">
+  <style>
+    html,body,#map{height:100%;width:100%;margin:0} body{font:14px system-ui,sans-serif}
+    .panel{position:absolute;z-index:2;top:12px;left:12px;right:12px;max-width:420px;padding:12px;background:#fff;border-radius:10px;box-shadow:0 2px 12px #0003}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px} button{padding:9px 12px;border:1px solid #777;border-radius:7px;background:#f7f7f7;font-weight:600}
+    #status{margin-top:7px;color:#444;font-size:12px}.attribution{font-size:11px;color:#555;margin-top:6px}
+  </style>
+</head>
+<body>
+  <div id="map" aria-label="Experimental 3D terrain map"></div>
+  <section class="panel">
+    <strong>FieldTrack 3D terrain — test only</strong>
+    <div>Isolated MapLibre proof-of-concept. The production Leaflet map is unchanged.</div>
+    <div class="actions">
+      <button id="terrainToggle" type="button">Enable 3D terrain</button>
+      <button id="resetView" type="button">Reset view</button>
+    </div>
+    <div id="status" role="status">Loading experimental map…</div>
+    <div class="attribution">MapLibre GL JS • Demo style/elevation tiles for evaluation only. Not approved for production use.</div>
+  </section>
+  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+  <script>
+    (() => {
+      const status = document.getElementById('status');
+      const toggle = document.getElementById('terrainToggle');
+      const start = { center: [-65.5, 44.0], zoom: 8, pitch: 0, bearing: 0 };
+      const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://demotiles.maplibre.org/style.json',
+        ...start,
+        attributionControl: true
+      });
+      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+      let terrainOn = false;
+      map.on('load', () => {
+        status.textContent = 'Map style loaded. Enable 3D to test terrain rendering.';
+        toggle.disabled = false;
+      });
+      map.on('error', (event) => {
+        const message = event && event.error && event.error.message ? event.error.message : 'Map resource failed';
+        status.textContent = 'Map resource warning: ' + message;
+      });
+      toggle.addEventListener('click', () => {
+        if (!map.isStyleLoaded()) return;
+        if (!terrainOn) {
+          try {
+            if (!map.getSource('ft-dem')) {
+              map.addSource('ft-dem', {
+                type: 'raster-dem',
+                url: 'https://demotiles.maplibre.org/terrain-tiles/tiles.json',
+                tileSize: 256,
+                encoding: 'mapbox'
+              });
+            }
+            map.setTerrain({ source: 'ft-dem', exaggeration: 1.0 });
+            map.easeTo({ pitch: 60, duration: 700 });
+            terrainOn = true;
+            toggle.textContent = 'Disable 3D terrain';
+            status.textContent = '3D terrain requested. Confirm tile coverage and performance on device.';
+          } catch (error) {
+            status.textContent = '3D terrain could not be enabled: ' + error.message;
+          }
+        } else {
+          map.setTerrain(null);
+          map.easeTo({ pitch: 0, duration: 700 });
+          terrainOn = false;
+          toggle.textContent = 'Enable 3D terrain';
+          status.textContent = 'Flat map view restored.';
+        }
+      });
+      document.getElementById('resetView').addEventListener('click', () => {
+        map.setTerrain(null);
+        terrainOn = false;
+        toggle.textContent = 'Enable 3D terrain';
+        map.easeTo({ ...start, duration: 700 });
+        status.textContent = 'View reset to the Nova Scotia test area.';
+      });
+      toggle.disabled = true;
+    })();
+  </script>
+</body>
+</html>

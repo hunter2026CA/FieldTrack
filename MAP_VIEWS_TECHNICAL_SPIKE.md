@@ -64,3 +64,7 @@ MapLibre is an open-source renderer, but that does **not** make every satellite 
 ## Current implementation gate
 
 No map-engine migration or 3D UI has been applied in this spike. The next engineering step is a disposable MapLibre proof-of-concept using a vetted DEM/imagery source, while keeping the current Leaflet app untouched. The 4D mode remains unimplemented until its intended meaning and data source are defined.
+
+## Isolated proof-of-concept added — 2026-11-27
+
+`maplibre_3d_spike.html` now provides a separate Nova Scotia-centered MapLibre test page with a flat/3D terrain toggle and reset control. It uses MapLibre demo style and DEM endpoints strictly for evaluation. `index.html` remains unchanged. `test_maplibre_3d_spike.cjs` checks the source configuration and control wiring; it does not substitute for live browser/WebGL/device testing. Do not ship the demo endpoints in production.

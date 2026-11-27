@@ -1,0 +1,13 @@
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const html = fs.readFileSync(new URL('./maplibre_3d_spike.html', `file://${__filename}`), 'utf8');
+assert.match(html, /maplibre-gl@5\.6\.2/);
+assert.match(html, /https:\/\/demotiles\.maplibre\.org\/style\.json/);
+assert.match(html, /type: 'raster-dem'/);
+assert.match(html, /map\.setTerrain\(\{ source: 'ft-dem', exaggeration: 1\.0 \}\)/);
+assert.match(html, /map\.setTerrain\(null\)/);
+assert.match(html, /pitch: 60/);
+assert.match(html, /\[-65\.5, 44\.0\]/);
+assert.match(html, /Not approved for production use/);
+assert.match(html, /production Leaflet map is unchanged/);
+console.log('PASS: isolated MapLibre 3D terrain spike wiring and safety labels');
