@@ -4,21 +4,22 @@ A map-first hunting companion prototype focused on GPS maps, user-drawn property
 
 ## Current status
 
-- Current app entry point: **v14.3** (`index.html`)
-- Versioned snapshots: `FieldTrack_Interactive_Prototype_v14.3.html` (v14.3), `FieldTrack_Interactive_Prototype_v14.2.html` (v14.2), `FieldTrack_Interactive_Prototype_v14.html` (v14.2), `FieldTrack_Interactive_Prototype_v14.1.html` (previous checkpoint), `FieldTrack_Interactive_Prototype_v13.3.html`, `FieldTrack_Interactive_Prototype_v13.html`, `FieldTrack_Interactive_Prototype_v12.html`, `FieldTrack_Interactive_Prototype_v11.html`, `FieldTrack_Interactive_Prototype_v10.html`, `FieldTrack_Interactive_Prototype_v9.html`, `FieldTrack_Interactive_Prototype_v8.html`, `FieldTrack_Interactive_Prototype_v7.html`, and `FieldTrack_Interactive_Prototype_v6.html`.
-- `test_speedometer_v14.cjs` checks km/h (kph), mph, and knots conversion/persistence. `test_speedometer_v13_3.cjs` retains the original v13.3 GPS speed regression coverage. `test_map_layers_v14.cjs` checks satellite road/place label toggles, v14.2 blue Crown Land symbology and service-error handling, and the map legend; `test_wind_forecast_v14_3.cjs` exercises the seven-day daily wind forecast renderer; `test_wind_forecast_race_v14_3.cjs` checks that out-of-order requests and stale errors cannot overwrite the forecast for the latest selected map point; `test_wind_forecast_v14.cjs` retains 24-hour historical regression coverage; `test_area_measurement_v14.cjs` checks polygon area math and controls.
+- Current working preview: **v14.3.1 terrain preview** (`index.html`). The last fully user-verified hosted checkpoint remains v14.3 until the new 3D view, Crown Land overlay, and iPhone behavior are checked live.
+- Versioned snapshots: `FieldTrack_Interactive_Prototype_v14.3.1-terrain-preview.html` (v14.3.1 preview), `FieldTrack_Interactive_Prototype_v14.3.html` (v14.3), `FieldTrack_Interactive_Prototype_v14.2.html` (v14.2), `FieldTrack_Interactive_Prototype_v14.html` (v14.2), `FieldTrack_Interactive_Prototype_v14.1.html` (previous checkpoint), `FieldTrack_Interactive_Prototype_v13.3.html`, `FieldTrack_Interactive_Prototype_v13.html`, `FieldTrack_Interactive_Prototype_v12.html`, `FieldTrack_Interactive_Prototype_v11.html`, `FieldTrack_Interactive_Prototype_v10.html`, `FieldTrack_Interactive_Prototype_v9.html`, `FieldTrack_Interactive_Prototype_v8.html`, `FieldTrack_Interactive_Prototype_v7.html`, and `FieldTrack_Interactive_Prototype_v6.html`.
+- `test_3d_terrain_integration.cjs` checks the in-app MapLibre 2D/3D switch, satellite and Terrarium DEM sources, hillshade controls, Crown Land export-layer wiring, hunting-overlay synchronization, camera handoff/fallback, DOM IDs, and inline JavaScript syntax. `test_speedometer_v14.cjs` checks km/h (kph), mph, and knots conversion/persistence. `test_speedometer_v13_3.cjs` retains the original v13.3 GPS speed regression coverage. `test_map_layers_v14.cjs` checks satellite road/place label toggles, v14.2 blue Crown Land symbology and service-error handling, and the map legend; `test_wind_forecast_v14_3.cjs` exercises the seven-day daily wind forecast renderer; `test_wind_forecast_race_v14_3.cjs` checks that out-of-order requests and stale errors cannot overwrite the forecast for the latest selected map point; `test_wind_forecast_v14.cjs` retains 24-hour historical regression coverage; `test_area_measurement_v14.cjs` checks polygon area math and controls.
 - Automated checks: `test_mapfirst_crown_v13.cjs` checks the map-first viewport, five-tab navigation, Crown Land layer wiring, backup/restore controls, and that all literal DOM lookups resolve; `test_compass_wind_v12.cjs` checks the fixed cardinal compass, wind FROM/TOWARD math and arrow rotation; `test_weather_v11.cjs` checks current weather/wind display wiring; `test_saved_locations.cjs` covers current v10 named stands/waypoints; `test_boundary_controls.cjs` covers the v9 boundary workflow; `test_gps_v10.cjs` checks the current GPS tracking implementation (introduced in v10); `test_gps_v9.cjs`, `test_gps_v7.cjs`, and `test_gps_v6.cjs` are historical regression checks for the archived versions they name.
 - This is a browser prototype, not yet a production mobile app.
 
 ## Run locally
 
-Open `index.html` in a modern browser. Map tiles and weather/elevation lookups require an internet connection. Browser geolocation generally requires HTTPS or localhost and the user's permission.
+Serve the project folder over localhost or HTTPS and open `index.html` in a modern browser. Map tiles, terrain, weather, and elevation lookups require an internet connection. Browser geolocation generally requires HTTPS or localhost and the user's permission.
 
 ## Run automated checks
 
 Requires Node.js 18 or newer. From the project root:
 
 ```sh
+node --check test_3d_terrain_integration.cjs
 node --check test_speedometer_v14.cjs
 node --check test_map_layers_v14.cjs
 node --check test_wind_forecast_v14_3.cjs
@@ -34,6 +35,8 @@ node --check test_saved_locations.cjs
 node --check test_weather_v11.cjs
 node --check test_compass_wind_v12.cjs
 node --check test_navigation_init_v13_2.cjs
+node --check test_maplibre_3d_spike.cjs
+node test_3d_terrain_integration.cjs
 node test_speedometer_v14.cjs
 node test_map_layers_v14.cjs
 node test_wind_forecast_v14_3.cjs
@@ -51,6 +54,7 @@ node test_gps_v9.cjs
 node test_gps_v7.cjs
 node test_gps_v6.cjs
 node test_navigation_init_v13_2.cjs
+node test_maplibre_3d_spike.cjs
 ```
 
 The navigation-init test guards the DOM helper declaration order so early event listeners cannot fail during startup. The v13.1 map-first test checks all five navigation tabs and Crown Land wiring. The v12 compass test checks all four cardinal labels, the fixed north reference, meteorological wind FROM/TOWARD conversion, and rotation of the wind arrow. The weather test checks the current Open-Meteo request and wind-direction display wiring. The v6/v7/v9 GPS suites test their matching historical HTML snapshots. The v10 GPS suite exercises the current `index.html` GPS implementation (the GPS code has not changed in v12). The boundary test checks the v9 boundary helper logic; the saved-location test covers v10 naming, filtering, editing, validation, escaping, and GeoJSON name round-trip wiring. All browser-facing tests use mocked APIs; they do not prove real-world iPhone GPS accuracy, background tracking, or production hosting behavior.
@@ -143,7 +147,7 @@ Make changes on a feature branch where practical, run the checks above, review t
 
 ## Map-view architecture note — 2026-11-27
 
-`MAP_VIEWS_TECHNICAL_SPIKE.md` records the current Leaflet 2D architecture, a MapLibre-based 3D terrain evaluation path, provider/licensing checks, and the unresolved meaning of 4D. It is a planning/technical note only; no 3D engine or 4D UI has been added to the app.
+`MAP_VIEWS_TECHNICAL_SPIKE.md` records the Leaflet 2D fallback, the in-app MapLibre 3D terrain preview, provider/licensing checks, Nova Scotia LiDAR research, and the unresolved meaning of 4D. The 3D preview is present in `index.html`; 4D is not implemented.
 
 ## Isolated MapLibre 3D terrain spike — 2026-11-27
 
@@ -151,3 +155,14 @@ Make changes on a feature branch where practical, run the checks above, review t
 - Added `test_maplibre_3d_spike.cjs` to verify the terrain source, toggle/reset wiring, test location, and explicit demo-only warning.
 - This is a browser proof-of-concept, not a production map. Demo tiles are for evaluation only; imagery/DEM terms, Nova Scotia coverage, attribution, quota, iPhone performance, and operating costs must be validated before release.
 - To try it, serve the project folder over localhost or HTTPS and open `maplibre_3d_spike.html`. A direct `file://` open may be blocked by browser security. The automated test checks source wiring only; it does not verify live tile delivery or WebGL rendering.
+
+## v14.3.1 in-app 3D terrain preview — 2026-11-28
+
+- Added a visible 2D / 3D terrain switch to the main map-first app. The 2D Leaflet map remains the default and fallback; the 3D view uses MapLibre GL JS, Esri World Imagery, and Mapzen/Tilezen Terrarium elevation tiles from the AWS Open Data Terrain Tiles bucket.
+- Added real elevation-driven terrain with camera pitch/rotation controls, selectable 1.0× / 1.35× / 1.7× / 2.0× relief exaggeration, and an optional hillshade layer. This is not a flat image tilted in perspective.
+- Mirrored saved pins, user-drawn property boundaries, GPS tracks, current GPS location, temporary boundary/area drawings, measurements, imported map features, and user-loaded ownership GeoJSON into MapLibre GeoJSON layers. Map clicks in 3D are passed back to the existing Leaflet interaction logic so the app retains one local data model.
+- Added a MapServer export-image raster source for the same blue Crown Land renderer in 3D. It has not been live-tested against the provincial service; if the 3D Crown layer fails, the 2D map remains available and its Crown Land layer is unchanged.
+- Added a WebGL/library failure check and a return-to-2D fallback for terrain-source failures. Camera center/zoom are carried between map modes.
+- The AWS global DEM is a broad-scale bare-earth model, not fine property-scale LiDAR. Tilezen documents Canadian source data as variable resolution and about 30 m nominal at its 1-arc-second source level; zooming in does not create new ground detail. Nova Scotia's Elevation Explorer lists LiDAR-derived DEM, DSM, and hillshade products in parts of the province, including historic coverage for Shelburne and Queens counties. Exact coverage for any hunt property and a suitable hosted tile endpoint still need verification.
+- Added `test_3d_terrain_integration.cjs`. It checks source/layer/control wiring, overlay sync hooks, camera handoff/fallback, unique IDs, and inline JavaScript syntax. Static tests do not verify live tile delivery, the provincial Crown export endpoint, or iPhone WebGL performance.
+- This remains a **preview**, not v14.4. Do not call it a release until live Crown Land rendering and the full 3D view are checked on iPhone Safari. No GitHub push or deployment was performed; this workspace has no authenticated GitHub remote.

@@ -1,7 +1,7 @@
 # FieldTrack — build notes
 
-**Build checked:** 2026-11-22  
-**Current artifact:** `index.html` / `FieldTrack_Interactive_Prototype_v10.html`
+**Build checked:** 2026-11-28  
+**Current artifact:** `index.html` / `FieldTrack_Interactive_Prototype_v14.3.1-terrain-preview.html` (preview; last hosted user-verified checkpoint remains v14.3)
 
 ## Scope kept
 
@@ -245,3 +245,15 @@ The private GitHub repository is user-controlled and no authenticated GitHub con
 - 4D remains undefined. A time dimension is documented only as a possible GIS interpretation, not an agreed feature definition. No 3D/4D engine or UI was added in this run.
 - Validation: see the run summary for the full regression suite and extracted application JavaScript syntax check. These remain static/mock checks, not live iPhone, map-provider, or deployed-site verification.
 - GitHub upload/commit/deployment was not performed because this workspace has no authenticated GitHub connection or configured remote.
+
+
+## v14.3.1 in-app 3D terrain preview — 2026-11-28
+
+- Added MapLibre GL JS as an alternate map renderer in the main app, with 2D Leaflet still the default. The new toolbar/panel controls switch between 2D and 3D satellite terrain.
+- Configured Esri World Imagery as the 3D raster basemap and AWS Open Data Mapzen/Tilezen Terrarium as the raster-DEM terrain source. Added true `setTerrain()` relief, pitch/rotation navigation, hillshade, and user-selectable relief exaggeration.
+- Added MapLibre GeoJSON layers that mirror saved pins, saved property boundary, segmented GPS route, current GPS marker, in-progress boundary/area drawing, distance/area measurements, imported GeoJSON and user-loaded ownership features. 3D map clicks are sent through the existing Leaflet click handler to keep one local data model.
+- Added a MapServer export-image raster source for the blue Crown Land renderer in 3D, plus explicit error reporting. This endpoint has not been tested live; Crown Land parity is not yet verified.
+- Added WebGL/library checks and fallback to 2D if the 3D engine or DEM fails. Camera center/zoom are preserved when returning to 2D.
+- Researched terrain resolution: AWS/Tilezen Canada data is a broad-scale DEM with nominal ~30 m source resolution around zoom 12; high zoom can be oversampled. Nova Scotia's Elevation Explorer lists higher-detail LiDAR-derived DEM/DSM/hillshade downloads in some areas, including historical South West NS and Shelburne/Queens coverage. Exact property-level coverage and a browser tile service remain to be established.
+- Added `test_3d_terrain_integration.cjs` for static wiring, DOM uniqueness, overlay synchronization hooks, camera/fallback and inline syntax. All 19 test scripts passed both `node --check` and execution; these checks do not prove live tile delivery or iPhone behavior.
+- No authenticated GitHub remote is configured and container DNS/network access was unavailable. No upload, commit, deployment, or live service check was performed. Keep this labelled v14.3.1 preview; do not call it v14.4 yet.

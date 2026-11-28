@@ -1,21 +1,26 @@
-FIELDTRACK GITHUB TRANSFER PACKAGE — v14.2
+FIELDTRACK — v14.3.1 TERRAIN PREVIEW PACKAGE
 
-1. Extract this ZIP in the iPhone Files app or on a computer.
+What changed
+- The main app (index.html) now has a 2D / 3D terrain switch.
+- 2D Leaflet remains the default and fallback.
+- 3D uses satellite imagery over real elevation-driven terrain, with tilt/rotation controls, hillshade, and selectable relief exaggeration.
+- Saved pins, user-drawn property boundaries, GPS route/location, measurement shapes, imported GeoJSON and user-loaded ownership features are mirrored into the 3D view.
+- Crown Land is requested in 3D through the provincial MapServer export endpoint, but this has NOT been live-tested. If that layer fails in 3D, the 2D map remains available.
+
+Important status
+This is a v14.3.1 PREVIEW, not v14.4 and not a production release. The 19 automated Node tests passed, but they are static/mocked checks. Live imagery/DEM/Crown Land requests, iPhone Safari/WebGL performance, GPS behavior, and GitHub Pages deployment still need to be checked. The global DEM is regional-scale elevation, not property-scale LiDAR. Nova Scotia LiDAR coverage needs tile-by-tile verification.
+
+How to upload to the existing GitHub repository from iPhone
+1. Extract this ZIP in the iPhone Files app.
 2. Open https://github.com/hunter2026CA/FieldTrack
 3. Choose Add file > Upload files.
-4. Upload the files inside this extracted folder (not the ZIP itself). The files are at the top level; do not create an extra nested folder in the repository.
-5. Commit message: Fix Crown Land overlay colour to translucent blue (v14.2)
-6. Upload the full package contents so index.html is replaced and the v14 snapshot, updated documentation, feature inventory, and regression tests are added.
+4. Upload the extracted top-level contents so index.html is replaced. Keep the README, DEVELOPMENT_NOTES, MAP_VIEWS_TECHNICAL_SPIKE, FEATURE_BACKLOG_v14, test scripts, and versioned snapshots.
+5. Suggested commit message: Add integrated 3D terrain preview (v14.3.1; not release v14.4).
+6. After the commit and Pages rebuild, open the hosted app on iPhone over HTTPS. Confirm the 2D/3D switch, terrain relief, rotation, saved pins/boundary/route, Crown Land visibility, and return-to-2D behavior.
 
-The current app entry point is index.html (map-first prototype v14.2). Keep README.md, DEVELOPMENT_NOTES.md, FEATURE_BACKLOG_v14.md, .gitignore, versioned HTML snapshots, and all test scripts. Do not upload personal hunting coordinates, private property data, credentials, API keys, or passwords.
+Do not upload private hunting coordinates, personal property data, passwords, API keys, or other secrets. This package contains no user-specific hunting locations or credentials.
 
-The Tracking tab now supports km/h (kph), mph, and knots, with live, maximum, and average GPS speed. The Land tab adds satellite road/place labels, a translucent blue Nova Scotia Crown Land overlay with a darker blue parcel outline, a map legend, and area measurement. The Weather tab adds an on-demand 24-hour wind forecast.
+Cost note
+The use of MapLibre itself does not make all data providers free for unlimited commercial use. Imagery, elevation, Crown Land service usage, hosting, quotas, and attribution/terms still need review before promising a permanently free no-subscription app.
 
-Crown Land is a reference layer only and does not confirm access rights or hunting permission. Orange triangles are shown in the legend as base-map symbols whose exact source/meaning remains unverified. Area measurement is approximate and is not a legal survey. Weather is modelled forecast data; local wind can differ.
-
-The app does not add group chat or shared trail-camera photo uploads. Map backup/restore remains a manual local file operation, not live hunter sharing.
-
-This upload does not itself deploy the app. After committing, verify the GitHub Pages deployment and test the map, tabs, satellite labels, Crown Land rendering, wind forecast, area measurement, and GPS tracking on an iPhone over HTTPS. External map/service availability and live device GPS have not been verified by automated tests.
-
-
-v14.2 specifically restores a server-side ArcGIS dynamic-layer style override, requests PNG32 output for transparency, and displays service-side errors. The blue colour still needs confirmation on the hosted GitHub Pages app after this package is committed.
+Scope remains unchanged: no group chat and no shared trail-camera photo uploads.

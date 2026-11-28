@@ -16,11 +16,13 @@ This file records the feature ideas visible in the four reference screenshots su
 ## User-requested additions still to implement
 
 - **Seven-day wind forecast:** implemented in v14.3 as daily maximum wind speed, maximum gust, and dominant wind direction (FROM). Hour-by-hour detail is not currently shown in this seven-day view.
-- **2D / 3D terrain views:** add selectable map-view modes so the user can switch between standard 2D mapping and a 3D terrain perspective. Validate the chosen elevation/terrain provider and mobile performance before promising offline or unrestricted use.
+- **2D / 3D terrain views:** an in-app 3D satellite-terrain preview now exists in v14.3.1. Keep 2D as the default/fallback. Before release, live-test the Crown Land export layer, confirm iPhone Safari/WebGL performance, and replace/augment the global DEM with Nova Scotia LiDAR-derived terrain where coverage and service terms allow. 4D remains undefined and is not implemented.
 - **Harvest log:** record harvested wildlife such as deer and ducks, including species/breed, quantity, date/time, GPS location/coordinates, notes, season records, and an attached photo for each entry. Keep entries private to the user's device/account unless a separate sharing feature is explicitly approved.
 - **LandZone (duck hunting):** build this as a duck-hunting approach aid that uses wind direction to indicate/predict the direction ducks are likely to approach from. It is not a land-ownership, property-boundary, or Crown Land feature.
 
 ## Compatible ideas to evaluate next
+
+- **Higher-detail Nova Scotia terrain:** use the provincial Elevation Explorer to verify whether a given hunt property has LiDAR-derived DEM/DSM/hillshade tiles. The global AWS Terrain Tiles DEM is useful for regional relief but does not provide property-scale detail.
 
 ### Mapping and land overlays
 

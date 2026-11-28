@@ -61,10 +61,47 @@ MapLibre is an open-source renderer, but that does **not** make every satellite 
 - No API key or secret is embedded in a public client bundle unless the provider explicitly supports a restricted public key and its restrictions are configured.
 - A realistic cost/usage estimate exists before describing the app as free of monthly operating costs.
 
-## Current implementation gate
+## Initial implementation gate (before the v14.3.1 preview)
 
-No map-engine migration or 3D UI has been applied in this spike. The next engineering step is a disposable MapLibre proof-of-concept using a vetted DEM/imagery source, while keeping the current Leaflet app untouched. The 4D mode remains unimplemented until its intended meaning and data source are defined.
+At the time of the first isolated spike, no map-engine migration or 3D UI had been applied. A disposable MapLibre proof-of-concept was created while keeping the Leaflet app untouched. The subsequent in-app preview and its remaining live-verification gates are documented below. The 4D mode remains unimplemented until its intended meaning and data source are defined.
 
 ## Isolated proof-of-concept added — 2026-11-27
 
 `maplibre_3d_spike.html` now provides a separate Nova Scotia-centered MapLibre test page with a flat/3D terrain toggle and reset control. It uses MapLibre demo style and DEM endpoints strictly for evaluation. `index.html` remains unchanged. `test_maplibre_3d_spike.cjs` checks the source configuration and control wiring; it does not substitute for live browser/WebGL/device testing. Do not ship the demo endpoints in production.
+
+## Confirmed product requirement — 2026-11-27
+
+The user confirmed that **3D means real terrain relief**: hills, ridges, valleys, and mountains visibly rise from the map surface, with the camera able to tilt and rotate around the terrain. A flat satellite image merely pitched at an angle does not satisfy the requirement.
+
+### Release verification gate after the v14.3.1 preview
+
+- The main app now has a visible 2D / 3D map-mode control; 2D remains the default and fallback.
+- The 3D preview uses a real `raster-dem` source and `setTerrain()`, not camera pitch alone, with pitch/rotation controls and selectable relief exaggeration.
+- Saved stands/waypoints, user property boundary, GPS track/location, and measurement geometry are mirrored from the existing Leaflet state into MapLibre sources. The same local data remains authoritative.
+- Crown Land is wired through an ArcGIS export-image source using the blue dynamic renderer, but the service/CORS/colour path is not live-tested. Do not claim 3D Crown Land parity until it is visibly confirmed on the hosted app.
+- WebGL/library and DEM failures have a return-to-2D path. Verify that this works on real devices and does not clear local data.
+- Test on iPhone Safari as well as desktop. A successful syntax/unit test is not proof of terrain tile coverage or mobile rendering.
+
+**Release rule:** do not label the main app v14.4 until the 3D mode, Crown Land overlay, and fallback behavior are visibly verified on iPhone Safari. The current `maplibre_3d_spike.html` remains a separate demo; the main-app preview is in `index.html`.
+
+
+## In-app terrain preview implementation — 2026-11-28
+
+The isolated demo has now been followed by a contained alternate renderer in the main `index.html` preview (labelled v14.3.1, not v14.4):
+
+- Leaflet remains the default 2D map and the authoritative local state holder. MapLibre is created only when the user selects 3D.
+- 3D uses Esri World Imagery raster tiles draped over Mapzen/Tilezen Terrarium elevation tiles from the AWS Open Data `elevation-tiles-prod` bucket. The source is global and keyless, but the dataset registry links to Tilezen's provider-specific attribution requirements; it is not a guarantee of unlimited production service or zero operating cost.
+- MapLibre renders hillshade and actual terrain elevation, exposes pitch/rotation controls, and offers 1.0×, 1.35×, 1.7× and 2.0× relief exaggeration. The user can return to 2D; camera center and zoom are carried across.
+- Pins, the saved property outline, GPS track, current location, drawing previews, measurement shapes, imported features and user-loaded GeoJSON ownership features are mirrored from the existing Leaflet data into MapLibre GeoJSON sources. 3D clicks are routed into the existing Leaflet map-click handler.
+- Crown Land is attempted in 3D through the same ArcGIS MapServer dynamic renderer, requested as a PNG32 export image per Web Mercator tile. This URL construction and layer wiring are statically checked only; CORS, dynamic export behavior, visual colour/opacity and live service performance still require a real browser test. The 2D Crown Land layer remains the fallback.
+- WebGL/library unavailability prevents the switch; terrain source failures return to 2D. A failed Crown export is reported separately and does not clear local data.
+
+### Terrain resolution finding
+
+The AWS Open Data Registry describes Terrain Tiles as a global bare-earth elevation dataset on S3 and links to Tilezen's attribution document. Tilezen's source inventory identifies the Canadian Digital Elevation Model as the Canada source, with variable native resolution; its source table lists Canada at about 30 m nominal around zoom 12, and notes that higher zoom levels can oversample the underlying data. This is enough for regional hills and valleys, not dependable fine-scale ridges, ditches or small creek banks.
+
+Nova Scotia's official Elevation Explorer documents downloadable LiDAR point clouds and derived DEM, DSM and hillshade products. Its published history includes South West Nova Scotia and Shelburne/Queens coverage in 2018/2019, but exact tile coverage, freshness, vertical datum, redistribution terms and a browser-ready service must be checked for the user's actual hunt areas. The next terrain-quality step is to inspect those tiles and establish whether a public image/tile service exists or whether a compliant conversion/hosting path is needed.
+
+### Verification boundary
+
+`test_3d_terrain_integration.cjs` checks the main-app wiring, source definitions, data synchronization hooks, mode handoff/fallback and inline syntax. It is not a live map test. The container had no outbound DNS/network access during this run, so imagery/DEM/Crown requests could not be fetched. No iPhone Safari/WebGL check or GitHub Pages deployment was performed. The main app must not be labelled v14.4 until those checks, especially Crown Land parity, pass.
