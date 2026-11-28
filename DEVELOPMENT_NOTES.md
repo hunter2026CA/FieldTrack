@@ -257,3 +257,10 @@ The private GitHub repository is user-controlled and no authenticated GitHub con
 - Researched terrain resolution: AWS/Tilezen Canada data is a broad-scale DEM with nominal ~30 m source resolution around zoom 12; high zoom can be oversampled. Nova Scotia's Elevation Explorer lists higher-detail LiDAR-derived DEM/DSM/hillshade downloads in some areas, including historical South West NS and Shelburne/Queens coverage. Exact property-level coverage and a browser tile service remain to be established.
 - Added `test_3d_terrain_integration.cjs` for static wiring, DOM uniqueness, overlay synchronization hooks, camera/fallback and inline syntax. All 19 test scripts passed both `node --check` and execution; these checks do not prove live tile delivery or iPhone behavior.
 - No authenticated GitHub remote is configured and container DNS/network access was unavailable. No upload, commit, deployment, or live service check was performed. Keep this labelled v14.3.1 preview; do not call it v14.4 yet.
+
+## 2026-11-28 performance follow-up — hidden 3D overlay sync
+
+- User reported that the app feels laggy after the 3D terrain preview was added.
+- Inspection found that `syncMapLibreOverlays()` continued rebuilding all MapLibre GeoJSON sources whenever GPS fixes, pins, boundaries, or measurement shapes changed, even after switching back to the hidden 2D Leaflet map. GPS updates could therefore trigger unnecessary GeoJSON conversion and WebGL source updates in the background.
+- Changed the synchronization function in `index.html` and its extracted `app-inline.js` mirror to return immediately unless 3D mode is active. Switching into 3D already performs a full overlay sync, so the visible 3D map catches up when needed.
+- This is a targeted reduction in background work; it does not remove the cost of rendering live 3D terrain while 3D is selected. Needs an iPhone before/after feel test.
